@@ -1,0 +1,11 @@
+{
+  "welcome": "Welcome Back",
+  "subtitle": "Sign in to continue",
+  "email_label": "Email Address",
+  "password_label": "Password",
+  "sign_in": "Sign In",
+  "login_failed": "Login failed",
+  "network_error": "Network error. Please try again.",
+  "app_name": "Satu Data+",
+  "app_tagline": "Integrated Management System"
+}
