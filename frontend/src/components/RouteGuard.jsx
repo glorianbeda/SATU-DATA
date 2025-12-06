@@ -111,7 +111,7 @@ export const RoleRoute = ({ children, allowedRoles = [] }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        const userRole = response.data.user.role;
+        const userRole = response.data.user.role?.name || response.data.user.role;
         
         if (allowedRoles.includes(userRole)) {
           setIsAuthorized(true);

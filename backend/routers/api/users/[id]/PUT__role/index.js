@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const handler = async (req, res) => {
   try {
     // Check if user is admin
-    const adminRoles = ["Super Admin", "Admin"];
+    const adminRoles = ["SUPER_ADMIN", "ADMIN"];
     if (!adminRoles.includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
     }
@@ -42,10 +42,10 @@ const handler = async (req, res) => {
     }
 
     // Only allow ONE Super Admin
-    if (role.name === "Super Admin") {
+    if (role.name === "SUPER_ADMIN") {
       const existingSuperAdmin = await prisma.user.findFirst({
         where: {
-          role: { name: "Super Admin" },
+          role: { name: "SUPER_ADMIN" },
           id: { not: userId }, // Exclude current user being updated
         },
       });

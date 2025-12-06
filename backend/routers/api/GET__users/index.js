@@ -6,12 +6,19 @@ const prisma = new PrismaClient();
 const handler = async (req, res) => {
   try {
     // Check if user is admin
-    const adminRoles = ["Super Admin", "Admin"];
+    const adminRoles = ["SUPER_ADMIN", "ADMIN"];
     if (!adminRoles.includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    const { page = 1, limit = 10, status, search, role } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      role,
+      exclude_self,
+    } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Build where clause
@@ -30,6 +37,10 @@ const handler = async (req, res) => {
 
     if (role) {
       where.role = { name: role };
+    }
+
+    if (exclude_self === "true") {
+      where.id = { not: req.user.id };
     }
 
     // Get users with pagination

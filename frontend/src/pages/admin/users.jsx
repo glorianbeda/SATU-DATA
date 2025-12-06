@@ -11,17 +11,21 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EmailIcon from '@mui/icons-material/Email';
 import axios from 'axios';
-import AppLayout from '~/components/AppLayout';
+import { useLayout } from '~/context/LayoutContext';
 import { DataTable } from '~/components/DataTable';
 import { useAlert } from '~/context/AlertContext';
 import { useTheme } from '~/context/ThemeContext';
-
 import { RoleRoute } from '~/components/RouteGuard';
 
 const UserManagement = () => {
   const { t } = useTranslation();
+  const { setTitle } = useLayout();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
+  
+  useEffect(() => {
+    setTitle(t('user_management.title'));
+  }, [t, setTitle]);
   
   const [tabValue, setTabValue] = useState(0);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -335,7 +339,6 @@ const UserManagement = () => {
   ];
 
   return (
-    <AppLayout title={t('user_management.title')}>
       <Box className="p-2">
         <Typography variant="body1" className="text-gray-500 dark:text-gray-400 mb-4">
           {t('user_management.subtitle')}
@@ -505,7 +508,6 @@ const UserManagement = () => {
           </DialogActions>
         </Dialog>
       </Box>
-    </AppLayout>
   );
 };
 
