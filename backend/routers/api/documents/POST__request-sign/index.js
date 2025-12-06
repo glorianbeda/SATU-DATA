@@ -5,7 +5,8 @@ const prisma = new PrismaClient();
 
 const handler = async (req, res) => {
   try {
-    const { documentId, signerId, x, y, page } = req.body;
+    const { documentId, signerId, x, y, page, type, text, width, height } =
+      req.body;
 
     if (
       !documentId ||
@@ -44,6 +45,10 @@ const handler = async (req, res) => {
         page: page,
         isSigned: false,
         status: "PENDING",
+        type: type || "signature",
+        text: text,
+        width: width,
+        height: height,
       },
     });
 

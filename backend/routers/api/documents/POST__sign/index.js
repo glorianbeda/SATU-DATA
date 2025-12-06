@@ -1,8 +1,13 @@
 const { PrismaClient } = require("@prisma/client");
-const { PDFDocument } = require("pdf-lib");
+const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const authMiddleware = require("@/middleware/auth");
+const {
+  embedQRCodeInPDF,
+  areAllSignaturesComplete,
+} = require("@/utils/pdfQrCode");
 
 const prisma = new PrismaClient();
 
@@ -36,22 +41,19 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: "Request already processed" });
     }
 
-    if (!request.signer.sign) {
+    const isSignature =
+      !request.type ||
+      request.type === "signature" ||
+      request.type === "initial";
+
+    if (isSignature && !request.signer.sign) {
       return res.status(400).json({ error: "User has no signature set" });
     }
 
     // Paths
-    // Assuming backend runs in /backend, and uploads are in /backend/uploads
-    // request.document.filePath is like "/uploads/documents/..."
-    // request.signer.sign is like "/uploads/..."
-
-    // We need to resolve these to absolute paths
-    const backendRoot = path.join(__dirname, "../../../../"); // routers/api/documents/POST__sign -> backend/
-    // Actually, let's be safer. __dirname is .../backend/routers/api/documents/POST__sign
-    // We want .../backend
+    const backendRoot = path.join(__dirname, "../../../../");
 
     const resolvePath = (relativePath) => {
-      // Remove leading slash if present to join correctly
       const cleanPath = relativePath.startsWith("/")
         ? relativePath.slice(1)
         : relativePath;
@@ -59,12 +61,12 @@ const handler = async (req, res) => {
     };
 
     const pdfPath = resolvePath(request.document.filePath);
-    const signPath = resolvePath(request.signer.sign);
+    const signPath = isSignature ? resolvePath(request.signer.sign) : null;
 
     if (!fs.existsSync(pdfPath)) {
       return res.status(404).json({ error: "PDF file not found on server" });
     }
-    if (!fs.existsSync(signPath)) {
+    if (isSignature && !fs.existsSync(signPath)) {
       return res
         .status(404)
         .json({ error: "Signature file not found on server" });
@@ -74,66 +76,75 @@ const handler = async (req, res) => {
     const pdfBytes = fs.readFileSync(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
 
-    // Load Signature Image
-    const signBytes = fs.readFileSync(signPath);
-    let signImage;
-    if (signPath.endsWith(".png")) {
-      signImage = await pdfDoc.embedPng(signBytes);
-    } else {
-      signImage = await pdfDoc.embedJpg(signBytes);
-    }
-
     // Get page
     const pages = pdfDoc.getPages();
-    const pageIndex = request.page - 1; // 1-based to 0-based
+    const pageIndex = request.page - 1;
     if (pageIndex < 0 || pageIndex >= pages.length) {
       return res.status(400).json({ error: "Invalid page number" });
     }
     const page = pages[pageIndex];
 
-    // Draw signature
-    // Coordinates: request.x, request.y are likely top-left based percentages or pixels?
-    // Let's assume they are absolute points from bottom-left for now as per PDF standard,
-    // OR we might need to flip Y if frontend sends top-left.
-    // Usually frontend (web) is top-left. PDF is bottom-left.
-    // Let's assume frontend sends {x, y} as % of page width/height to be resolution independent.
-    // If x,y are > 1, assume pixels. If <= 1, assume percentage.
-
     const { width, height } = page.getSize();
     let drawX = request.x;
     let drawY = request.y;
 
-    // Simple heuristic for percentage vs points
     if (request.x <= 1 && request.y <= 1) {
       drawX = request.x * width;
-      // Flip Y for PDF (0 is bottom)
-      // Frontend Y=0 is top. PDF Y=height is top.
-      // So PDF_Y = height - (Frontend_Y * height)
       drawY = height - request.y * height;
     } else {
-      // If pixels, still might need to flip Y if it came from web
-      // Assuming web coordinates (top-left)
       drawY = height - request.y;
     }
 
-    // Scale signature
-    const signDims = signImage.scale(0.5); // Default scale?
-    // Maybe we should allow scaling in request? For now fixed or based on box?
-    // Let's use a standard width, say 100 units
-    const targetWidth = 100;
-    const scaleFactor = targetWidth / signImage.width;
-    const finalDims = signImage.scale(scaleFactor);
+    if (request.type === "text" || request.type === "date") {
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      let fontSize = 12;
 
-    // Adjust drawY to be bottom-left of the image
-    // If drawY was the top-left of the box
-    drawY = drawY - finalDims.height;
+      if (request.height && request.height <= 1) {
+        fontSize = request.height * height * 0.6;
+      }
 
-    page.drawImage(signImage, {
-      x: drawX,
-      y: drawY,
-      width: finalDims.width,
-      height: finalDims.height,
-    });
+      const text =
+        request.type === "date"
+          ? new Date().toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : request.text || "Signed";
+
+      page.drawText(text, {
+        x: drawX,
+        y: drawY - fontSize,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    } else {
+      const signBytes = fs.readFileSync(signPath);
+      let signImage;
+      if (signPath.endsWith(".png")) {
+        signImage = await pdfDoc.embedPng(signBytes);
+      } else {
+        signImage = await pdfDoc.embedJpg(signBytes);
+      }
+
+      let targetWidth = 100;
+      if (request.width && request.width <= 1) {
+        targetWidth = request.width * width;
+      }
+
+      const scaleFactor = targetWidth / signImage.width;
+      const finalDims = signImage.scale(scaleFactor);
+
+      drawY = drawY - finalDims.height;
+
+      page.drawImage(signImage, {
+        x: drawX,
+        y: drawY,
+        width: finalDims.width,
+        height: finalDims.height,
+      });
+    }
 
     // Save PDF
     const modifiedPdfBytes = await pdfDoc.save();
@@ -149,9 +160,46 @@ const handler = async (req, res) => {
       },
     });
 
+    // Check if all signatures are complete for this document
+    const allComplete = await areAllSignaturesComplete(
+      prisma,
+      request.documentId
+    );
+
+    if (allComplete) {
+      // Embed QR code for validation
+      const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      const validationUrl = `${baseUrl}/docs/validate?id=${
+        request.documentId
+      }&checksum=${request.document.checksum.substring(0, 8)}`;
+
+      try {
+        const qrResult = await embedQRCodeInPDF(
+          pdfPath,
+          validationUrl,
+          "Scan to verify authenticity"
+        );
+
+        // Update document with new checksum and file path
+        await prisma.document.update({
+          where: { id: request.documentId },
+          data: {
+            checksum: qrResult.checksum,
+            filePath: qrResult.relativePath,
+          },
+        });
+
+        console.log(`QR code embedded. New checksum: ${qrResult.checksum}`);
+      } catch (qrError) {
+        console.error("Failed to embed QR code:", qrError);
+        // Don't fail the signing, just log the error
+      }
+    }
+
     res.json({
       message: "Document signed successfully",
       request: updatedRequest,
+      allSignaturesComplete: allComplete,
     });
   } catch (error) {
     console.error("Sign document error:", error);

@@ -55,6 +55,10 @@ model SignatureRequest {
   x         Float
   y         Float
   page      Int
+  type      String   @default("signature")
+  text      String?  @db.Text
+  width     Float?
+  height    Float?
   signedAt  DateTime?
   rejectedAt DateTime?
   createdAt DateTime @default(now())

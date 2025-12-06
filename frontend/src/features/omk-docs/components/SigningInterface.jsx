@@ -6,8 +6,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { useConfirm } from '~/context/ConfirmationContext';
 
 const SigningInterface = ({ request, onClose }) => {
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 0, height: 0 });
@@ -78,7 +80,15 @@ const SigningInterface = ({ request, onClose }) => {
   };
 
   const handleReject = async () => {
-    if (!confirm('Are you sure you want to reject this request?')) return;
+    const isConfirmed = await confirm({
+      title: 'Tolak Permintaan?',
+      description: 'Apakah Anda yakin ingin menolak permintaan tanda tangan ini? Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Tolak',
+      cancelText: 'Batal',
+      variant: 'danger'
+    });
+
+    if (!isConfirmed) return;
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -105,6 +115,8 @@ const SigningInterface = ({ request, onClose }) => {
   // request.x, request.y are normalized (0-1)
   const boxLeft = request.x * pdfDimensions.width;
   const boxTop = request.y * pdfDimensions.height;
+  const boxWidth = request.width ? request.width * pdfDimensions.width : 100;
+  const boxHeight = request.height ? request.height * pdfDimensions.height : 50;
 
   const fileUrl = `${import.meta.env.VITE_API_URL}${request.document.filePath}`;
 
@@ -164,12 +176,14 @@ const SigningInterface = ({ request, onClose }) => {
                         style={{ 
                             top: boxTop, 
                             left: boxLeft,
-                            width: 100, // Fixed width for visualization
-                            height: 50 
+                            width: boxWidth,
+                            height: boxHeight 
                         }}
                     >
                         <Typography variant="caption" className="font-bold text-green-800">
-                            Your Signature
+                            {request.type === 'text' ? (request.text || 'Text') : 
+                             request.type === 'date' ? 'Date' : 
+                             'Your Signature'}
                         </Typography>
                     </Box>
                 )}

@@ -30,9 +30,10 @@ const handler = async (req, res) => {
     if (existingDoc) {
       // Optional: Delete the uploaded file since it's a duplicate
       fs.unlinkSync(filePath);
-      return res.status(409).json({
-        error: "Document already exists",
+      return res.status(200).json({
+        message: "Document already exists",
         document: existingDoc,
+        exists: true,
       });
     }
 
