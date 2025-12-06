@@ -10,12 +10,9 @@ const handler = async (req, res) => {
     const userId = req.user.id;
     const cacheKey = `profile:${userId}`;
 
-    // 1. Try to get from cache
-    const cachedUser = await cache.get(cacheKey);
-    if (cachedUser) {
-      console.log("Serving profile from cache");
-      return res.json({ user: cachedUser });
-    }
+    // Clear old cache on every fetch to ensure role data stays fresh
+    // This can be optimized later with cache invalidation on role change
+    await cache.del(cacheKey);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -1,22 +1,22 @@
-const { createClient } = require("redis");
+// Redis is currently disabled - all operations are no-ops
+// To enable, install and start Redis, then restore the actual implementation
 
-const redisHost = process.env.REDIS_HOST || "redis";
-const redisPort = process.env.REDIS_PORT || 6379;
+const DEFAULT_TTL = 3600;
 
-const client = createClient({
-  url: `redis://${redisHost}:${redisPort}`,
-});
-
-client.on("error", (err) => console.log("Redis Client Error", err));
-client.on("connect", () => console.log("Redis Client Connected"));
-
-// Connect immediately
-(async () => {
-  try {
-    await client.connect();
-  } catch (err) {
-    console.error("Failed to connect to Redis:", err);
-  }
-})();
-
-module.exports = client;
+module.exports = {
+  get isOpen() {
+    return false;
+  },
+  get isReady() {
+    return false;
+  },
+  async get(key) {
+    return null;
+  },
+  async set(key, value, options) {
+    return null;
+  },
+  async del(key) {
+    return null;
+  },
+};
