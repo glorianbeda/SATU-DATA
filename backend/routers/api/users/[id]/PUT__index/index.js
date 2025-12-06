@@ -5,50 +5,60 @@ const prisma = new PrismaClient();
 
 const handler = async (req, res) => {
   try {
-    // Check if user is admin (match actual role names from database)
+    // Check if user is admin
     const adminRoles = ["Super Admin", "Admin"];
     if (!adminRoles.includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    const { userId } = req.body;
+    const userId = parseInt(req.params.id);
+    const { name, email } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
+    if (!name && !email) {
+      return res.status(400).json({ error: "Name or email is required" });
     }
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
+      where: { id: userId },
     });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.status !== "PENDING") {
-      return res.status(400).json({ error: "User is not pending" });
+    // Check email uniqueness if changing
+    if (email && email !== user.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already in use" });
+      }
     }
 
-    // Update user status to REJECTED
+    // Update user
     const updatedUser = await prisma.user.update({
-      where: { id: parseInt(userId) },
+      where: { id: userId },
       data: {
-        status: "REJECTED",
+        ...(name && { name }),
+        ...(email && { email }),
       },
+      include: { role: true },
     });
 
     res.json({
-      message: "User rejected",
+      message: "User updated successfully",
       user: {
         id: updatedUser.id,
         name: updatedUser.name,
         email: updatedUser.email,
         status: updatedUser.status,
+        role: updatedUser.role.name,
       },
     });
   } catch (error) {
-    console.error("Reject user error:", error);
+    console.error("Update user error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

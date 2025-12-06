@@ -80,9 +80,16 @@ const loadRoutesV2 = (baseDir, currentPath = "") => {
         // The actual route path is currentPath + / + name
         // Example: baseDir=routers/api, item=GET__login -> path=/api/login
 
+        // Handle 'index' as empty (root of current path)
         // Handle dynamic parameters [id] -> :id
-        const finalName = name.replace(/\[(.*?)\]/g, ":$1");
-        const routePath = `${currentPath}/${finalName}`.replace("//", "/");
+        let finalName = name === "index" ? "" : name;
+        finalName = finalName.replace(/\[(.*?)\]/g, ":$1");
+
+        let routePath = currentPath;
+        if (finalName) {
+          routePath = `${currentPath}/${finalName}`;
+        }
+        routePath = routePath.replace("//", "/") || "/";
 
         const modulePath = path.join(fullPath, "index.js");
         if (fs.existsSync(modulePath)) {
@@ -96,8 +103,9 @@ const loadRoutesV2 = (baseDir, currentPath = "") => {
           console.log(`[Route] ${method.toUpperCase()} ${routePath}`);
         }
       } else {
-        // It's a path segment
-        loadRoutesV2(fullPath, `${currentPath}/${item}`);
+        // It's a path segment - convert [param] to :param for routing
+        const pathSegment = item.replace(/\[(.*?)\]/g, ":$1");
+        loadRoutesV2(fullPath, `${currentPath}/${pathSegment}`);
       }
     }
   });

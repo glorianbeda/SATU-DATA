@@ -1,15 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
-const { Resend } = require("resend");
 const crypto = require("crypto");
 const authMiddleware = require("@/middleware/auth");
+const { sendVerificationEmail } = require("@/services/emailService");
 
 const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const handler = async (req, res) => {
   try {
-    // Check if user is admin
-    const adminRoles = ["SUPER_ADMIN", "ADMIN"];
+    // Check if user is admin (match actual role names from database)
+    const adminRoles = ["Super Admin", "Admin"];
     if (!adminRoles.includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
     }
@@ -29,8 +28,23 @@ const handler = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // Spam protection - check user status
+    if (user.status === "VERIFIED") {
+      return res.status(400).json({ error: "User is already verified" });
+    }
+
+    if (user.status === "APPROVED") {
+      return res.status(400).json({
+        error: "User is already approved. Verification email was already sent.",
+      });
+    }
+
+    if (user.status === "REJECTED") {
+      return res.status(400).json({ error: "Cannot approve a rejected user" });
+    }
+
     if (user.status !== "PENDING") {
-      return res.status(400).json({ error: "User is not pending" });
+      return res.status(400).json({ error: "User is not in pending status" });
     }
 
     // Generate verification token
@@ -45,25 +59,30 @@ const handler = async (req, res) => {
       },
     });
 
-    // Send verification email
-    const verificationUrl = `${
-      process.env.FRONTEND_URL || "http://localhost:5174"
-    }/verify-email?token=${verificationToken}`;
+    // Send verification email using global service (with rate limiting)
+    const emailResult = await sendVerificationEmail(
+      user.email,
+      user.name,
+      verificationToken
+    );
 
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: user.email,
-      subject: "Verify your email - Satu Data+",
-      html: `
-        <h1>Welcome to Satu Data+!</h1>
-        <p>Hi ${user.name},</p>
-        <p>Your account has been approved. Please verify your email by clicking the link below:</p>
-        <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px;">Verify Email</a>
-        <p>Or copy and paste this link:</p>
-        <p>${verificationUrl}</p>
-        <p>This link will expire in 24 hours.</p>
-      `,
-    });
+    if (!emailResult.success) {
+      // If email failed due to rate limit, still mark as approved
+      if (emailResult.rateLimited) {
+        return res.status(429).json({
+          error: emailResult.error,
+          retryAfter: emailResult.retryAfter,
+          user: {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            status: updatedUser.status,
+          },
+        });
+      }
+      // Other email errors
+      console.error("Email send failed:", emailResult.error);
+    }
 
     res.json({
       message: "User approved and verification email sent",
