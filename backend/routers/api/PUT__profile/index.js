@@ -1,9 +1,9 @@
 const { PrismaClient } = require("@prisma/client");
-const authMiddleware = require("../../../middleware/auth");
+const authMiddleware = require("@/middleware/auth");
 
 const prisma = new PrismaClient();
 
-const upload = require("../../../middleware/upload");
+const upload = require("@/middleware/upload");
 
 // Middleware array: Auth -> Multer -> Handler
 const handler = async (req, res) => {
@@ -35,11 +35,11 @@ const handler = async (req, res) => {
       updateData.sign = `/uploads/${signFile.filename}`;
     }
 
-    const cache = require("../../../utils/cache");
+    const cache = require("@/utils/cache");
 
     // ... (inside handler)
 
-    const updatedAdmin = await prisma.admin.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
       select: {
@@ -58,7 +58,7 @@ const handler = async (req, res) => {
 
     res.json({
       message: "Profile updated successfully",
-      user: updatedAdmin,
+      user: updatedUser,
     });
   } catch (error) {
     console.error("Update profile error:", error);

@@ -13,7 +13,8 @@ import {
   ExpandMore,
   TrendingUp,
   TrendingDown,
-  Close as CloseIcon
+  Close as CloseIcon,
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 
@@ -57,10 +58,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     fetchProfile();
   }, []);
 
+  const [openDocs, setOpenDocs] = useState(false);
+
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'OMK Docs', icon: <DocsIcon />, path: '/docs' },
     { text: 'Saldo Asli', icon: <WalletIcon />, path: '/balance' },
+  ];
+
+  const docsItems = [
+    { text: 'Minta tanda tangan', icon: <EditIcon />, path: '/docs/request' },
+    { text: 'Perlu Ditandatangani', icon: <DocsIcon />, path: '/docs/inbox' },
+    { text: 'Validasi dokumen', icon: <CheckCircleIcon />, path: '/docs/validate' },
   ];
 
   const financeItems = [
@@ -118,6 +126,26 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         {menuItems.map((item) => (
           <ListItemLink key={item.text} item={item} />
         ))}
+
+        {/* Collapsible OMK Docs Menu */}
+        <div 
+            className="flex items-center px-4 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
+            onClick={() => setOpenDocs(!openDocs)}
+        >
+            <div className="mr-3 text-gray-400">
+                <DocsIcon />
+            </div>
+            <span className="font-medium text-sm flex-1">OMK Docs</span>
+            {openDocs ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+        </div>
+        
+        <Collapse in={openDocs} timeout="auto" unmountOnExit>
+            <div className="space-y-1 mt-1">
+                {docsItems.map((item) => (
+                    <ListItemLink key={item.text} item={item} nested />
+                ))}
+            </div>
+        </Collapse>
 
         {/* Collapsible Finance Menu */}
         <div 

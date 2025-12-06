@@ -10,20 +10,51 @@ datasource db {
 model Role {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  admins    Admin[]
+  users     User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Admin {
+model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String
-  profilePicture String? @db.Text // Storing profile picture as base64 or URL
-  sign      String?  @db.Text // Storing signature as base64 or URL
+  profilePicture String? @db.Text
+  sign      String?  @db.Text
   roleId    Int
   role      Role     @relation(fields: [roleId], references: [id])
+  documents Document[] @relation("UploadedDocuments")
+  signatureRequests SignatureRequest[] @relation("SignerRequests")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id        Int      @id @default(autoincrement())
+  title     String
+  filePath  String   @db.Text
+  checksum  String   @unique
+  uploaderId Int
+  uploader  User     @relation("UploadedDocuments", fields: [uploaderId], references: [id])
+  requests  SignatureRequest[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SignatureRequest {
+  id        Int      @id @default(autoincrement())
+  documentId Int
+  document  Document @relation(fields: [documentId], references: [id])
+  signerId  Int
+  signer    User     @relation("SignerRequests", fields: [signerId], references: [id])
+  status    String   @default("PENDING") // PENDING, SIGNED, REJECTED
+  isSigned  Boolean  @default(false)
+  x         Float
+  y         Float
+  page      Int
+  signedAt  DateTime?
+  rejectedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

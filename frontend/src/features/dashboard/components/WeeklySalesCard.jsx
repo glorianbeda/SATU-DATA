@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart } from '../../../components/charts';
+import { BarChart } from '~/components/charts';
 
 const WeeklySalesCard = () => {
     const categories = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

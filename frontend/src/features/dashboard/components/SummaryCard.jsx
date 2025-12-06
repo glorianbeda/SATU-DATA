@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AreaChart } from '../../../components/charts';
+import { AreaChart } from '~/components/charts';
 
 const SummaryCard = ({ title, value, percentage, data, color, type }) => {
     const { t } = useTranslation();

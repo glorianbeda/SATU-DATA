@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Sidebar from '../../components/Sidebar';
-import Header from '../../components/Header';
-import ProfileEditForm from '../../features/profile/components/ProfileEditForm';
-import ChangePasswordForm from '../../features/profile/components/ChangePasswordForm';
+import Sidebar from '~/components/Sidebar';
+import Header from '~/components/Header';
+import ProfileEditForm from '~/features/profile/components/ProfileEditForm';
+import ChangePasswordForm from '~/features/profile/components/ChangePasswordForm';
 import { IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 

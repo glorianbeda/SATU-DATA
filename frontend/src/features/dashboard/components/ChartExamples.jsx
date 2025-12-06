@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, BarChart, PieChart, DoughnutChart, AreaChart } from '../../../components/charts';
+import { LineChart, BarChart, PieChart, DoughnutChart, AreaChart } from '~/components/charts';
 
 const ChartExamples = () => {
     // Sample data for different chart types

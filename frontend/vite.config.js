@@ -23,4 +23,9 @@ export default defineConfig({
     ],
     exclude: ["@imgly/background-removal"],
   },
+  resolve: {
+    alias: {
+      "~": "/src",
+    },
+  },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '~/context/ThemeContext';
 
 /**
  * Reusable Area Chart Component using ApexCharts

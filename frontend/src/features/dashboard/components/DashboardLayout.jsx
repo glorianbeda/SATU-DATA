@@ -5,12 +5,12 @@ import SummaryCard from './SummaryCard';
 import ActivityHeatmap from './ActivityHeatmap';
 import TrafficSourcesCard from './TrafficSourcesCard';
 import WeeklySalesCard from './WeeklySalesCard';
-import Sidebar from '../../../components/Sidebar';
-import Header from '../../../components/Header';
+import Sidebar from '~/components/Sidebar';
+import Header from '~/components/Header';
 import { IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 
-import ContentLoader from '../../../components/ContentLoader';
+import ContentLoader from '~/components/ContentLoader';
 
 const DashboardLayout = () => {
   const { t } = useTranslation();

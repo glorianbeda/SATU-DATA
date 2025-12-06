@@ -1,5 +1,5 @@
 import React from 'react';
-import { PieChart } from '../../../components/charts';
+import { PieChart } from '~/components/charts';
 
 const TrafficSourcesCard = () => {
     const labels = ['Direct', 'Organic', 'Referral', 'Social'];
