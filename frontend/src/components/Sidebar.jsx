@@ -22,7 +22,7 @@ import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, IconButton,
 
 import { hasPermission, ROLES } from '~/config/roles';
 
-const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false }) => {
+const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,44 +40,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false }) => {
     showSuccess(t('common.logout_success') || 'Logged out successfully');
     navigate('/login');
   };
-  const [user, setUser] = useState({
-    name: 'Super Admin',
-    email: 'admin@satudata.com',
-    profilePicture: null,
-    role: ROLES.SUPER_ADMIN
-  });
 
   const isActive = (path) => location.pathname === path;
-
-  // Fetch user profile on mount
-  React.useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUser({
-            name: data.user.name || 'Super Admin',
-            email: data.user.email || 'admin@satudata.com',
-            profilePicture: data.user.profilePicture,
-            role: data.user.role || ROLES.MEMBER
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch profile for sidebar:', error);
-      }
-    };
-
-    fetchProfile();
-  }, []);
 
   const [openDocs, setOpenDocs] = useState(false);
 
