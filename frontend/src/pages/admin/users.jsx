@@ -114,7 +114,7 @@ const UserManagement = () => {
     const selectedRole = roles.find(r => r.id === roleId);
     
     // If promoting to Super Admin, show confirmation dialog
-    if (selectedRole?.name === 'Super Admin') {
+    if (selectedRole?.name === 'SUPER_ADMIN') {
       const user = allUsers.find(u => u.id === userId);
       setRoleConfirmDialog({ 
         open: true, 
