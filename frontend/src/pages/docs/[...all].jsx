@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import AppLayout from '~/components/AppLayout';
-import DocumentUpload from '~/features/omk-docs/components/DocumentUpload';
-import SignaturePlacer from '~/features/omk-docs/components/SignaturePlacer';
+import { useLayout } from '~/context/LayoutContext';
+import SignatureRequestWizard from '~/features/omk-docs/components/SignatureRequestWizard';
 import Inbox from '~/features/omk-docs/components/Inbox';
 import SigningInterface from '~/features/omk-docs/components/SigningInterface';
 import ValidateDocument from '~/features/omk-docs/components/ValidateDocument';
 
 const DocsPage = () => {
-  const [uploadedDoc, setUploadedDoc] = useState(null);
+  const { setTitle } = useLayout();
+  const navigate = useNavigate();
   const [signingRequest, setSigningRequest] = useState(null);
 
-  const handleUploadSuccess = (doc) => {
-    setUploadedDoc(doc);
-  };
+  React.useEffect(() => {
+    setTitle('OMK Docs');
+  }, [setTitle]);
 
   const handleSignClick = (request) => {
     setSigningRequest(request);
@@ -24,8 +24,16 @@ const DocsPage = () => {
     setSigningRequest(null);
   };
 
+  const handleWizardComplete = () => {
+    navigate('/docs/inbox');
+  };
+
+  const handleWizardCancel = () => {
+    navigate('/docs/inbox');
+  };
+
   return (
-    <AppLayout title="OMK Docs">
+    <>
       {signingRequest ? (
           <SigningInterface request={signingRequest} onClose={handleCloseSigning} />
       ) : (
@@ -34,15 +42,10 @@ const DocsPage = () => {
           
           <Route path="request" element={
               <Box className="h-[calc(100vh-200px)]">
-              {!uploadedDoc ? (
-                  <DocumentUpload onUploadSuccess={handleUploadSuccess} />
-              ) : (
-                  <SignaturePlacer 
-                      documentId={uploadedDoc.id} 
-                      fileUrl={`${import.meta.env.VITE_API_URL}${uploadedDoc.filePath}`}
-                      onClose={() => setUploadedDoc(null)}
-                  />
-              )}
+                <SignatureRequestWizard 
+                  onComplete={handleWizardComplete}
+                  onCancel={handleWizardCancel}
+                />
               </Box>
           } />
           
@@ -51,8 +54,9 @@ const DocsPage = () => {
           <Route path="validate" element={<ValidateDocument />} />
           </Routes>
       )}
-    </AppLayout>
+    </>
   );
 };
 
 export default DocsPage;
+
