@@ -38,6 +38,6 @@
 
 - [x] Add loading states and error handling
 - [x] Add translations for new UI elements
-- [ ] Test wizard flow end-to-end
-- [ ] Test validation with uploaded file
-- [ ] Test QR code scanning and validation link
+- [x] Test wizard flow end-to-end
+- [x] Test validation with uploaded file
+- [x] Test QR code scanning and validation link

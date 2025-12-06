@@ -31,6 +31,6 @@
 
 ## Task 6: Verification
 
-- [ ] Test Super Admin can access User Management page
-- [ ] Test Admin cannot access User Management page
-- [ ] Test Member cannot access User Management page
+- [x] Test Super Admin can access User Management page
+- [x] Test Admin cannot access User Management page
+- [x] Test Member cannot access User Management page

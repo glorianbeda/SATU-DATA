@@ -1,6 +1,6 @@
 # Auth Spec Delta - Standardize Role Format
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Role naming convention
 
