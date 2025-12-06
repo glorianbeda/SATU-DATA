@@ -1,29 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '~/context/ThemeContext';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage } from '~/i18n';
 import { 
   Search as SearchIcon, 
   NotificationsNone as BellIcon,
   DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon
+  LightMode as LightModeIcon,
+  Language as LanguageIcon,
+  Menu as MenuIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
+import { Menu, MenuItem, IconButton, Tooltip, Avatar, ListItemIcon, Divider } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useAlert } from '~/context/AlertContext';
 
-const Header = ({ title }) => {
+const Header = ({ title, toggleSidebar, user }) => {
   const { mode, toggleTheme } = useTheme();
-  const today = new Date().toLocaleDateString('en-GB', { 
+  const { i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { showSuccess } = useAlert();
+  const [langAnchorEl, setLangAnchorEl] = useState(null);
+  const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+  
+  const today = new Date().toLocaleDateString(i18n.language === 'id' ? 'id-ID' : 'en-GB', { 
     weekday: 'long', 
     day: 'numeric', 
     month: 'long', 
     year: 'numeric' 
   });
 
+  const handleLanguageChange = (lang) => {
+    changeLanguage(lang);
+    setLangAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    setProfileAnchorEl(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    showSuccess('Logged out successfully');
+    navigate('/login');
+  };
+
+  const currentLang = i18n.language === 'id' ? '🇮🇩' : '🇬🇧';
+
   return (
     <div className="flex justify-between items-center mb-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{title}</h1>
-        <p className="text-gray-500 text-sm mt-1">{today}</p>
+      <div className="flex items-center gap-4">
+        <IconButton 
+          onClick={toggleSidebar}
+          className="text-gray-500 dark:text-gray-400"
+        >
+          <MenuIcon />
+        </IconButton>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{title}</h1>
+          <p className="text-gray-500 text-sm mt-1">{today}</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Search Bar */}
         <div className="hidden md:flex items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 w-64">
             <SearchIcon className="text-gray-400 mr-2" fontSize="small" />
@@ -33,6 +71,36 @@ const Header = ({ title }) => {
                 className="bg-transparent border-none outline-none text-sm w-full text-gray-600 dark:text-gray-200 placeholder-gray-400"
             />
         </div>
+
+        {/* Language Selector */}
+        <Tooltip title="Change Language">
+          <button 
+            onClick={(e) => setLangAnchorEl(e.currentTarget)}
+            className="p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+          >
+            <span className="text-lg">{currentLang}</span>
+          </button>
+        </Tooltip>
+        <Menu
+          anchorEl={langAnchorEl}
+          open={Boolean(langAnchorEl)}
+          onClose={() => setLangAnchorEl(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem 
+            onClick={() => handleLanguageChange('id')}
+            selected={i18n.language === 'id'}
+          >
+            🇮🇩 Bahasa Indonesia
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleLanguageChange('en')}
+            selected={i18n.language === 'en'}
+          >
+            🇬🇧 English
+          </MenuItem>
+        </Menu>
 
         {/* Theme Toggle Switch */}
         <div 
@@ -64,6 +132,83 @@ const Header = ({ title }) => {
             <BellIcon fontSize="small" />
             <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-800"></span>
         </button>
+
+        {/* Profile Dropdown */}
+        <Tooltip title="Account settings">
+            <IconButton
+                onClick={(e) => setProfileAnchorEl(e.currentTarget)}
+                size="small"
+                sx={{ ml: 0.5 }}
+                aria-controls={Boolean(profileAnchorEl) ? 'account-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={Boolean(profileAnchorEl) ? 'true' : undefined}
+            >
+                {user?.profilePicture ? (
+                    <Avatar 
+                        src={user.profilePicture.startsWith('http') ? user.profilePicture : `${import.meta.env.VITE_API_URL}${user.profilePicture}`} 
+                        sx={{ width: 40, height: 40 }}
+                    />
+                ) : (
+                    <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+                        {user?.name?.substring(0, 1).toUpperCase() || 'U'}
+                    </Avatar>
+                )}
+            </IconButton>
+        </Tooltip>
+        <Menu
+            anchorEl={profileAnchorEl}
+            id="account-menu"
+            open={Boolean(profileAnchorEl)}
+            onClose={() => setProfileAnchorEl(null)}
+            onClick={() => setProfileAnchorEl(null)}
+            PaperProps={{
+                elevation: 0,
+                sx: {
+                    overflow: 'visible',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                    mt: 1.5,
+                    '& .MuiAvatar-root': {
+                        width: 32,
+                        height: 32,
+                        ml: -0.5,
+                        mr: 1,
+                    },
+                    '&:before': {
+                        content: '""',
+                        display: 'block',
+                        position: 'absolute',
+                        top: 0,
+                        right: 14,
+                        width: 10,
+                        height: 10,
+                        bgcolor: 'background.paper',
+                        transform: 'translateY(-50%) rotate(45deg)',
+                        zIndex: 0,
+                    },
+                },
+                className: "dark:bg-gray-800 dark:text-white"
+            }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        >
+            <div className="px-4 py-2">
+                <p className="font-bold text-sm text-gray-800 dark:text-white">{user?.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+            </div>
+            <Divider className="dark:border-gray-700" />
+            <MenuItem onClick={() => navigate('/profile')}>
+                <ListItemIcon>
+                    <PersonIcon fontSize="small" className="dark:text-gray-400" />
+                </ListItemIcon>
+                Profile
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                    <LogoutIcon fontSize="small" className="dark:text-gray-400" />
+                </ListItemIcon>
+                Logout
+            </MenuItem>
+        </Menu>
       </div>
     </div>
   );
