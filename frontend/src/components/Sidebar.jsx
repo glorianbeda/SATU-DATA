@@ -14,7 +14,8 @@ import {
   TrendingUp,
   TrendingDown,
   Close as CloseIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 
@@ -63,6 +64,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Saldo Asli', icon: <WalletIcon />, path: '/balance' },
+  ];
+
+  const adminItems = [
+    { text: 'User Management', icon: <PeopleIcon />, path: '/admin/users' },
   ];
 
   const docsItems = [
@@ -126,6 +131,17 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         {menuItems.map((item) => (
           <ListItemLink key={item.text} item={item} />
         ))}
+
+        {/* Admin Section - Only show for admins */}
+        {adminItems.length > 0 && (
+          <>
+            <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
+            <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Admin</p>
+            {adminItems.map((item) => (
+              <ListItemLink key={item.text} item={item} />
+            ))}
+          </>
+        )}
 
         {/* Collapsible OMK Docs Menu */}
         <div 

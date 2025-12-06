@@ -18,7 +18,8 @@
     "multer": "^2.0.2",
     "pdf-lib": "^1.17.1",
     "prisma": "^5.7.0",
-    "redis": "^4.6.12"
+    "redis": "^4.6.12",
+    "resend": "^6.5.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

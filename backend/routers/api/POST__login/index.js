@@ -28,6 +28,20 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Check if user is verified
+    if (user.status === "PENDING") {
+      return res.status(403).json({ error: "Account is pending approval" });
+    }
+    if (user.status === "APPROVED") {
+      return res.status(403).json({ error: "Please verify your email first" });
+    }
+    if (user.status === "REJECTED") {
+      return res.status(403).json({ error: "Account has been rejected" });
+    }
+    if (user.status !== "VERIFIED") {
+      return res.status(403).json({ error: "Account is not active" });
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role.name },
       JWT_SECRET,

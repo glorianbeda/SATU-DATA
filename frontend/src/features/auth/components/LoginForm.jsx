@@ -116,7 +116,12 @@ const LoginForm = () => {
                         {/* Forgot password link could go here */}
                     </Grid>
                     <Grid item>
-                        {/* Register link removed as per request */}
+                        <Typography variant="body2" color="textSecondary">
+                            Don't have an account?{' '}
+                            <a href="/register" className="text-blue-600 hover:underline">
+                                Register here
+                            </a>
+                        </Typography>
                     </Grid>
                 </Grid>
             </Box>

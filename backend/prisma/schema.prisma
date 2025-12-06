@@ -24,6 +24,8 @@ model User {
   sign      String?  @db.Text
   roleId    Int
   role      Role     @relation(fields: [roleId], references: [id])
+  status    String   @default("PENDING") // PENDING, APPROVED, VERIFIED, REJECTED
+  verificationToken String? @db.Text
   documents Document[] @relation("UploadedDocuments")
   signatureRequests SignatureRequest[] @relation("SignerRequests")
   createdAt DateTime @default(now())
