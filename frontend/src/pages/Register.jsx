@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper, Alert, CircularProgress } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { PublicRoute } from '~/components/RouteGuard';
 
-const Register = () => {
+const RegisterContent = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -125,5 +126,11 @@ const Register = () => {
     </Box>
   );
 };
+
+const Register = () => (
+  <PublicRoute>
+    <RegisterContent />
+  </PublicRoute>
+);
 
 export default Register;
