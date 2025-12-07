@@ -3,14 +3,10 @@ const authMiddleware = require("@/middleware/auth");
 
 const prisma = new PrismaClient();
 
+const checkRole = require("@/middleware/checkRole");
+
 const handler = async (req, res) => {
   try {
-    // Check if user is admin
-    const adminRoles = ["SUPER_ADMIN", "ADMIN"];
-    if (!adminRoles.includes(req.user.role)) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
     const userId = parseInt(req.params.id);
 
     // Get user
@@ -42,4 +38,4 @@ const handler = async (req, res) => {
   }
 };
 
-module.exports = [authMiddleware, handler];
+module.exports = [authMiddleware, checkRole(["SUPER_ADMIN"]), handler];

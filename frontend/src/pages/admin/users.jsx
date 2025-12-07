@@ -41,9 +41,8 @@ const UserManagement = () => {
 
   const fetchPendingUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/pending`, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true
       });
       setPendingUsers(response.data.users);
     } catch (err) {
@@ -53,9 +52,8 @@ const UserManagement = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true
       });
       setAllUsers(response.data.users);
       setRoles(response.data.roles || []);
@@ -76,10 +74,9 @@ const UserManagement = () => {
   const handleApprove = async (userId) => {
     setActionLoading(userId);
     try {
-      const token = localStorage.getItem('token');
       await axios.post(`${import.meta.env.VITE_API_URL}/api/users/approve`, 
         { userId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       showSuccess('User approved and verification email sent');
       setPendingUsers(pendingUsers.filter(u => u.id !== userId));
@@ -94,10 +91,9 @@ const UserManagement = () => {
   const handleReject = async (userId) => {
     setActionLoading(userId);
     try {
-      const token = localStorage.getItem('token');
       await axios.post(`${import.meta.env.VITE_API_URL}/api/users/reject`, 
         { userId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       showSuccess('User rejected');
       setPendingUsers(pendingUsers.filter(u => u.id !== userId));
@@ -132,10 +128,9 @@ const UserManagement = () => {
   const executeRoleChange = async (userId, roleId) => {
     setActionLoading(userId);
     try {
-      const token = localStorage.getItem('token');
       await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${userId}/role`, 
         { roleId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       showSuccess('User role updated');
       fetchAllUsers();
@@ -150,9 +145,8 @@ const UserManagement = () => {
   const handleResendVerification = async (userId) => {
     setActionLoading(userId);
     try {
-      const token = localStorage.getItem('token');
       await axios.post(`${import.meta.env.VITE_API_URL}/api/users/${userId}/resend-verification`, {}, 
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       showSuccess('Verification email sent');
     } catch (err) {
@@ -166,10 +160,9 @@ const UserManagement = () => {
     const { user } = editDialog;
     setActionLoading(user.id);
     try {
-      const token = localStorage.getItem('token');
       await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, 
         { name: user.name, email: user.email },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       showSuccess('User updated successfully');
       setEditDialog({ open: false, user: null });
@@ -185,9 +178,8 @@ const UserManagement = () => {
     const { user } = deleteDialog;
     setActionLoading(user.id);
     try {
-      const token = localStorage.getItem('token');
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, 
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       showSuccess('User deleted successfully');
       setDeleteDialog({ open: false, user: null });

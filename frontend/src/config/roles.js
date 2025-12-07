@@ -29,6 +29,7 @@ export const ROLE_PERMISSIONS = {
 };
 
 export const hasPermission = (userRole, permission) => {
-  if (!userRole || !ROLE_PERMISSIONS[userRole]) return false;
-  return ROLE_PERMISSIONS[userRole][permission] || false;
+  const roleName = userRole?.name || userRole;
+  if (!roleName || !ROLE_PERMISSIONS[roleName]) return false;
+  return ROLE_PERMISSIONS[roleName][permission] || false;
 };
