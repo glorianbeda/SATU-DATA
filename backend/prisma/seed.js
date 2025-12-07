@@ -35,7 +35,7 @@ async function main() {
     create: {
       email: "superadmin@satudata.com",
       password: hashedPassword,
-      name: "Super Admin",
+      name: "SUPER_ADMIN",
       roleId: superAdminRole.id,
       status: "VERIFIED",
     },

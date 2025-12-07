@@ -23,7 +23,7 @@ model User {
   profilePicture String? @db.Text
   sign      String?  @db.Text
   roleId    Int
-  role      Role     @relation(fields: [roleId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   status    String   @default("PENDING") // PENDING, APPROVED, VERIFIED, REJECTED
   verificationToken String? @db.Text
   documents Document[] @relation("UploadedDocuments")
@@ -38,7 +38,7 @@ model Document {
   filePath  String   @db.Text
   checksum  String   @unique
   uploaderId Int
-  uploader  User     @relation("UploadedDocuments", fields: [uploaderId], references: [id])
+  uploader  User     @relation("UploadedDocuments", fields: [uploaderId], references: [id], onDelete: Cascade)
   requests  SignatureRequest[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -47,9 +47,9 @@ model Document {
 model SignatureRequest {
   id        Int      @id @default(autoincrement())
   documentId Int
-  document  Document @relation(fields: [documentId], references: [id])
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   signerId  Int
-  signer    User     @relation("SignerRequests", fields: [signerId], references: [id])
+  signer    User     @relation("SignerRequests", fields: [signerId], references: [id], onDelete: Cascade)
   status    String   @default("PENDING") // PENDING, SIGNED, REJECTED
   isSigned  Boolean  @default(false)
   x         Float
