@@ -27,17 +27,15 @@ const MainLayoutContent = ({ children }) => {
 
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            credentials: 'include'
         });
 
         if (response.ok) {
             const data = await response.json();
             // Role name is now standardized as SUPER_ADMIN, ADMIN, MEMBER
-            const userRole = data.user.role?.name || ROLES.MEMBER;
+            // Handle both object (role.name) and string (role)
+            const userRole = data.user.role?.name || data.user.role || ROLES.MEMBER;
             
             setUser({
                 name: data.user.name,

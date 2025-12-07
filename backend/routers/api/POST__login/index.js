@@ -48,9 +48,15 @@ module.exports = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict", // or 'lax' depending on requirements, strict is safer but can be tricky with redirects
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
+
     res.json({
       message: "Login successful",
-      token,
       user: {
         id: user.id,
         name: user.name,

@@ -4,37 +4,29 @@ import axios from 'axios';
 import PageLoader from './PageLoader';
 
 /**
- * ProtectedRoute - Requires valid auth token
- * Redirects to /login if no token or invalid token
+ * ProtectedRoute - Requires valid auth session (cookie)
+ * Redirects to /login if session is invalid
  */
 export const ProtectedRoute = ({ children }) => {
   const [isValid, setIsValid] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
-    const validateToken = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setIsValid(false);
-        return;
-      }
-
+    const validateSession = async () => {
       try {
-        // Validate token by calling profile endpoint
+        // Validate session by calling profile endpoint with credentials (cookies)
         await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
+          withCredentials: true
         });
         setIsValid(true);
       } catch (error) {
-        // Token invalid or expired
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Session invalid or expired
+        localStorage.removeItem('user'); // Clear user data if any
         setIsValid(false);
       }
     };
 
-    validateToken();
+    validateSession();
   }, []);
 
   if (isValid === null) {
@@ -57,23 +49,14 @@ export const PublicRoute = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setIsLoggedIn(false);
-        return;
-      }
-
       try {
-        // Validate token
+        // Check if session is valid
         await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
+          withCredentials: true
         });
         setIsLoggedIn(true);
       } catch (error) {
-        // Token invalid
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Not logged in
         setIsLoggedIn(false);
       }
     };
@@ -98,17 +81,10 @@ export const RoleRoute = ({ children, allowedRoles = [] }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setIsAuthorized(false);
-        return;
-      }
-
       try {
-        // Validate token and get user role
+        // Validate session and get user role
         const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
+          withCredentials: true
         });
         
         const userRole = response.data.user.role?.name || response.data.user.role;
@@ -119,7 +95,7 @@ export const RoleRoute = ({ children, allowedRoles = [] }) => {
           setIsAuthorized(false);
         }
       } catch (error) {
-        // Token invalid or network error
+        // Session invalid or network error
         setIsAuthorized(false);
       }
     };

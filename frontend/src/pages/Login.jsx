@@ -1,13 +1,13 @@
 import React from 'react';
-import { LoginLayout } from '~/features/auth';
+import Auth from './Auth';
 import { PublicRoute } from '~/components/RouteGuard';
 
 const Login = () => {
-    return (
-        <PublicRoute>
-            <LoginLayout />
-        </PublicRoute>
-    );
+  return (
+    <PublicRoute>
+      <Auth initialIsLogin={true} />
+    </PublicRoute>
+  );
 };
 
 export default Login;
