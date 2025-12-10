@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   Box, Typography, Button, CircularProgress, Chip, Tabs, Tab,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Select, MenuItem, FormControl, InputLabel, IconButton, Alert
@@ -22,11 +22,11 @@ const UserManagement = () => {
   const { setTitle } = useLayout();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
-  
+
   useEffect(() => {
     setTitle(t('user_management.title'));
   }, [t, setTitle]);
-  
+
   const [tabValue, setTabValue] = useState(0);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -36,7 +36,7 @@ const UserManagement = () => {
   const [editDialog, setEditDialog] = useState({ open: false, user: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
   const [roleConfirmDialog, setRoleConfirmDialog] = useState({ open: false, user: null, roleId: null, roleName: '' });
-  
+
   const { showSuccess, showError } = useAlert();
 
   const fetchPendingUsers = async () => {
@@ -74,7 +74,7 @@ const UserManagement = () => {
   const handleApprove = async (userId) => {
     setActionLoading(userId);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/approve`, 
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/approve`,
         { userId },
         { withCredentials: true }
       );
@@ -91,7 +91,7 @@ const UserManagement = () => {
   const handleReject = async (userId) => {
     setActionLoading(userId);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/reject`, 
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/reject`,
         { userId },
         { withCredentials: true }
       );
@@ -108,19 +108,19 @@ const UserManagement = () => {
   const handleRoleChange = async (userId, roleId) => {
     // Find the role name
     const selectedRole = roles.find(r => r.id === roleId);
-    
+
     // If promoting to Super Admin, show confirmation dialog
     if (selectedRole?.name === 'SUPER_ADMIN') {
       const user = allUsers.find(u => u.id === userId);
-      setRoleConfirmDialog({ 
-        open: true, 
-        user, 
-        roleId, 
-        roleName: selectedRole.name 
+      setRoleConfirmDialog({
+        open: true,
+        user,
+        roleId,
+        roleName: selectedRole.name
       });
       return;
     }
-    
+
     // Otherwise proceed directly
     await executeRoleChange(userId, roleId);
   };
@@ -128,7 +128,7 @@ const UserManagement = () => {
   const executeRoleChange = async (userId, roleId) => {
     setActionLoading(userId);
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${userId}/role`, 
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${userId}/role`,
         { roleId },
         { withCredentials: true }
       );
@@ -145,7 +145,7 @@ const UserManagement = () => {
   const handleResendVerification = async (userId) => {
     setActionLoading(userId);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/${userId}/resend-verification`, {}, 
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/${userId}/resend-verification`, {},
         { withCredentials: true }
       );
       showSuccess('Verification email sent');
@@ -160,7 +160,7 @@ const UserManagement = () => {
     const { user } = editDialog;
     setActionLoading(user.id);
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, 
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`,
         { name: user.name, email: user.email },
         { withCredentials: true }
       );
@@ -178,7 +178,7 @@ const UserManagement = () => {
     const { user } = deleteDialog;
     setActionLoading(user.id);
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, 
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`,
         { withCredentials: true }
       );
       showSuccess('User deleted successfully');
@@ -206,23 +206,23 @@ const UserManagement = () => {
   const pendingColumns = [
     { field: 'name', headerName: 'Name', width: 200 },
     { field: 'email', headerName: 'Email', width: 250 },
-    { 
-      field: 'createdAt', 
-      headerName: 'Registered', 
+    {
+      field: 'createdAt',
+      headerName: 'Registered',
       width: 150,
       renderCell: (row) => new Date(row.createdAt).toLocaleDateString()
     },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
+    {
+      field: 'status',
+      headerName: 'Status',
       width: 120,
       sortable: false,
       exportable: false,
       renderCell: () => <Chip label="Pending" color="warning" size="small" />
     },
-    { 
-      field: 'actions', 
-      headerName: 'Actions', 
+    {
+      field: 'actions',
+      headerName: 'Actions',
       width: 220,
       sortable: false,
       exportable: false,
@@ -256,9 +256,9 @@ const UserManagement = () => {
   const allUsersColumns = [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'email', headerName: 'Email', width: 220 },
-    { 
-      field: 'role', 
-      headerName: 'Role', 
+    {
+      field: 'role',
+      headerName: 'Role',
       width: 180,
       sortable: false,
       exportable: false,
@@ -274,33 +274,36 @@ const UserManagement = () => {
             ))}
           </Select>
         </FormControl>
-      )
+      ),
+      valueGetter: (row) => row.role?.name || '-'
     },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
+    {
+      field: 'status',
+      headerName: 'Status',
       width: 120,
       sortable: false,
       exportable: false,
-      renderCell: (row) => getStatusChip(row.status)
+      renderCell: (row) => getStatusChip(row.status),
+      valueGetter: (row) => row.status
     },
-    { 
-      field: 'createdAt', 
-      headerName: 'Registered', 
+    {
+      field: 'createdAt',
+      headerName: 'Registered',
       width: 120,
-      renderCell: (row) => new Date(row.createdAt).toLocaleDateString()
+      renderCell: (row) => new Date(row.createdAt).toLocaleDateString(),
+      valueGetter: (row) => new Date(row.createdAt).toLocaleDateString()
     },
-    { 
-      field: 'actions', 
-      headerName: 'Actions', 
+    {
+      field: 'actions',
+      headerName: 'Actions',
       width: 160,
       sortable: false,
       exportable: false,
       renderCell: (row) => (
         <Box className="flex gap-1">
           {row.status === 'APPROVED' && (
-            <IconButton 
-              size="small" 
+            <IconButton
+              size="small"
               color="primary"
               onClick={() => handleResendVerification(row.id)}
               disabled={actionLoading === row.id}
@@ -309,16 +312,16 @@ const UserManagement = () => {
               <EmailIcon fontSize="small" />
             </IconButton>
           )}
-          <IconButton 
-            size="small" 
+          <IconButton
+            size="small"
             color="info"
             onClick={() => setEditDialog({ open: true, user: { ...row } })}
             title="Edit"
           >
             <EditIcon fontSize="small" />
           </IconButton>
-          <IconButton 
-            size="small" 
+          <IconButton
+            size="small"
             color="error"
             onClick={() => setDeleteDialog({ open: true, user: row })}
             title="Delete"
@@ -336,9 +339,9 @@ const UserManagement = () => {
           {t('user_management.subtitle')}
         </Typography>
 
-        <Tabs 
-          value={tabValue} 
-          onChange={(_, v) => setTabValue(v)} 
+        <Tabs
+          value={tabValue}
+          onChange={(_, v) => setTabValue(v)}
           className="mb-4"
           sx={{
             '& .MuiTab-root': {
@@ -383,8 +386,8 @@ const UserManagement = () => {
         )}
 
         {/* Edit Dialog */}
-        <Dialog 
-          open={editDialog.open} 
+        <Dialog
+          open={editDialog.open}
           onClose={() => setEditDialog({ open: false, user: null })}
           PaperProps={{
             className: "dark:bg-gray-800"
@@ -434,8 +437,8 @@ const UserManagement = () => {
         </Dialog>
 
         {/* Delete Dialog */}
-        <Dialog 
-          open={deleteDialog.open} 
+        <Dialog
+          open={deleteDialog.open}
           onClose={() => setDeleteDialog({ open: false, user: null })}
           PaperProps={{
             className: "dark:bg-gray-800"
@@ -459,8 +462,8 @@ const UserManagement = () => {
         </Dialog>
 
         {/* Super Admin Confirmation Dialog */}
-        <Dialog 
-          open={roleConfirmDialog.open} 
+        <Dialog
+          open={roleConfirmDialog.open}
           onClose={() => setRoleConfirmDialog({ open: false, user: null, roleId: null, roleName: '' })}
           maxWidth="sm"
           fullWidth
@@ -483,15 +486,15 @@ const UserManagement = () => {
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button 
+            <Button
               onClick={() => setRoleConfirmDialog({ open: false, user: null, roleId: null, roleName: '' })}
               className="dark:text-gray-300"
             >
               {t('user_management.cancel')}
             </Button>
-            <Button 
-              onClick={() => executeRoleChange(roleConfirmDialog.user?.id, roleConfirmDialog.roleId)} 
-              variant="contained" 
+            <Button
+              onClick={() => executeRoleChange(roleConfirmDialog.user?.id, roleConfirmDialog.roleId)}
+              variant="contained"
               color="warning"
               disabled={actionLoading}
             >
