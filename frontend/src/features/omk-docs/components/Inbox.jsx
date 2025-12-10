@@ -82,6 +82,7 @@ const Inbox = ({ onSignClick }) => {
       headerName: 'Date',
       width: 120,
       renderCell: (row) => new Date(row.createdAt).toLocaleDateString(),
+      valueGetter: (row) => new Date(row.createdAt).toLocaleDateString(),
     },
     {
       field: 'actions',

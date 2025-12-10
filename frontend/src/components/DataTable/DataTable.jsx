@@ -32,7 +32,7 @@ import TableSkeleton from './TableSkeleton';
 
 /**
  * Reusable DataTable Component
- * 
+ *
  * @param {Object} props
  * @param {Array} props.columns - Column definitions [{field, headerName, width, renderCell, sortable, exportable}]
  * @param {Array} props.data - Array of row data objects
@@ -56,10 +56,11 @@ const DataTable = ({
   emptyMessage = 'No data available',
   defaultRowsPerPage = 10,
   rowsPerPageOptions = [5, 10, 25, 50],
+  actions,
 }) => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
-  
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,20 +114,28 @@ const DataTable = ({
     setPage(0);
   };
 
+  // Helper to get cell value for export
+  const getCellValue = (row, col) => {
+    if (col.valueGetter) {
+      return col.valueGetter(row);
+    }
+    return row[col.field];
+  };
+
   // Export to CSV
   const exportToCSV = () => {
-    const exportColumns = columns.filter((col) => col.exportable !== false && !col.renderCell);
+    const exportColumns = columns.filter((col) => col.exportable !== false);
     const headers = exportColumns.map((col) => col.headerName).join(',');
     const rows = sortedData.map((row) =>
       exportColumns.map((col) => {
-        const value = row[col.field];
+        const value = getCellValue(row, col);
         // Escape quotes and wrap in quotes if contains comma
         const escaped = String(value ?? '').replace(/"/g, '""');
         return escaped.includes(',') ? `"${escaped}"` : escaped;
       }).join(',')
     );
     const csv = [headers, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `${title || 'data'}_${new Date().toISOString().split('T')[0]}.csv`;
@@ -136,9 +145,9 @@ const DataTable = ({
 
   // Export to PDF
   const exportToPDF = () => {
-    const exportColumns = columns.filter((col) => col.exportable !== false && !col.renderCell);
+    const exportColumns = columns.filter((col) => col.exportable !== false);
     const doc = new jsPDF();
-    
+
     // Add title
     if (title) {
       doc.setFontSize(16);
@@ -150,7 +159,7 @@ const DataTable = ({
       startY: title ? 25 : 15,
       head: [exportColumns.map((col) => col.headerName)],
       body: sortedData.map((row) =>
-        exportColumns.map((col) => String(row[col.field] ?? ''))
+        exportColumns.map((col) => String(getCellValue(row, col) ?? ''))
       ),
       styles: { fontSize: 9 },
       headStyles: { fillColor: [37, 99, 235] },
@@ -171,8 +180,9 @@ const DataTable = ({
             </Typography>
           )}
         </Box>
-        
+
         <Box className="flex items-center gap-2">
+          {actions}
           {searchable && (
             <TextField
               size="small"
@@ -209,11 +219,11 @@ const DataTable = ({
               }}
             />
           )}
-          
+
           {exportable && (
             <>
               <Tooltip title="Export">
-                <IconButton 
+                <IconButton
                   onClick={(e) => setExportAnchorEl(e.currentTarget)}
                   sx={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'inherit' }}
                 >
@@ -283,9 +293,9 @@ const DataTable = ({
               <TableSkeleton columns={columns} rows={rowsPerPage} />
             ) : paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell 
-                  colSpan={columns.length} 
-                  align="center" 
+                <TableCell
+                  colSpan={columns.length}
+                  align="center"
                   sx={{
                     py: 6,
                     color: isDark ? 'rgb(156, 163, 175)' : 'rgb(107, 114, 128)',
@@ -302,8 +312,8 @@ const DataTable = ({
                   hover
                   className="transition-colors"
                   sx={{
-                    backgroundColor: isDark 
-                      ? (rowIndex % 2 === 0 ? 'rgb(31, 41, 55)' : 'rgb(17, 24, 39)') 
+                    backgroundColor: isDark
+                      ? (rowIndex % 2 === 0 ? 'rgb(31, 41, 55)' : 'rgb(17, 24, 39)')
                       : (rowIndex % 2 === 0 ? 'transparent' : 'rgba(0, 0, 0, 0.02)'),
                     '&:hover': {
                       backgroundColor: isDark ? 'rgb(55, 65, 81) !important' : 'rgba(0, 0, 0, 0.04) !important',
@@ -311,8 +321,8 @@ const DataTable = ({
                   }}
                 >
                   {columns.map((col) => (
-                    <TableCell 
-                      key={col.field} 
+                    <TableCell
+                      key={col.field}
                       sx={{
                         color: isDark ? 'rgb(229, 231, 235)' : 'inherit',
                         borderBottom: isDark ? '1px solid rgb(55, 65, 81)' : '1px solid rgba(224, 224, 224, 1)',
