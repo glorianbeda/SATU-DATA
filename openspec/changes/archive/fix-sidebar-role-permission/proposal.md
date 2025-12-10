@@ -24,7 +24,7 @@ Transform the role data in `MainLayout.jsx` to map the role name to the correct 
 // Convert "Super Admin" -> "SUPER_ADMIN", "Admin" -> "ADMIN", "Member" -> "MEMBER"
 const roleNameToKey = {
   'Super Admin': 'SUPER_ADMIN',
-  'Admin': 'ADMIN', 
+  'Admin': 'ADMIN',
   'Member': 'MEMBER'
 };
 const userRole = roleNameToKey[data.user.role?.name] || ROLES.MEMBER;

@@ -12,7 +12,7 @@ Then MainLayout should transform it to `role: "SUPER_ADMIN"`
 And Sidebar should show User Management menu
 And Sidebar should show Finance menu
 
-#### Scenario: Admin role is correctly mapped  
+#### Scenario: Admin role is correctly mapped
 Given a user logs in with role "Admin"
 When the profile API returns `{ role: { name: "Admin" } }`
 Then MainLayout should transform it to `role: "ADMIN"`

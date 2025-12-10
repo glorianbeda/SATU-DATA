@@ -9,7 +9,7 @@ model SignatureRequest {
   type      String   @default("signature") // signature, text, date, initial
   text      String?  // Content for text/date
   width     Float?   // Width in PDF units (normalized or absolute?) -> Let's use normalized (0-1) or relative to PDF size?
-                     // Current implementation uses normalized x/y. 
+                     // Current implementation uses normalized x/y.
                      // Let's store width/height as normalized values (0-1) relative to page size to be consistent with x/y.
   height    Float?
 }
