@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { removeBackground } from '@imgly/background-removal';
 import SignatureCanvas from 'react-signature-canvas';
-import { 
-  TextField, 
-  Button, 
-  Avatar, 
-  Box, 
-  Typography, 
+import {
+  TextField,
+  Button,
+  Avatar,
+  Box,
+  Typography,
   CircularProgress,
   Alert,
   Tabs,
@@ -40,24 +40,23 @@ const ProfileEditForm = () => {
     const fetchProfile = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-        const token = localStorage.getItem('token');
         const response = await axios.get(`${apiUrl}/api/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
+          withCredentials: true
         });
-        
+
         const { user } = response.data;
         if (user) {
           setName(user.name || '');
           if (user.profilePicture) {
             // Check if it's a full URL or relative path
-            const picUrl = user.profilePicture.startsWith('http') 
-              ? user.profilePicture 
+            const picUrl = user.profilePicture.startsWith('http')
+              ? user.profilePicture
               : `${apiUrl}${user.profilePicture}`;
             setProfilePicturePreview(picUrl);
           }
           if (user.sign) {
-             const signUrl = user.sign.startsWith('http') 
-              ? user.sign 
+             const signUrl = user.sign.startsWith('http')
+              ? user.sign
               : `${apiUrl}${user.sign}`;
             setSignaturePreview(signUrl);
           }
@@ -88,7 +87,7 @@ const ProfileEditForm = () => {
 
   const handleRemoveBackground = async () => {
     if (!signature) return;
-    
+
     setBgRemovalLoading(true);
     try {
       // imglyRemoveBackground returns a Blob
@@ -158,12 +157,10 @@ const ProfileEditForm = () => {
     try {
       // Assuming API URL is from env or relative if proxied
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const token = localStorage.getItem('token'); // Assuming token is stored here
-
       await axios.put(`${apiUrl}/api/profile`, formData, {
+        withCredentials: true,
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'multipart/form-data'
         }
       });
 
@@ -191,8 +188,8 @@ const ProfileEditForm = () => {
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* Profile Picture Section */}
         <Box className="flex items-center gap-4">
-          <Avatar 
-            src={profilePicturePreview} 
+          <Avatar
+            src={profilePicturePreview}
             sx={{ width: 80, height: 80 }}
             className="border-2 border-gray-200 dark:border-gray-600"
           />
@@ -204,8 +201,8 @@ const ProfileEditForm = () => {
               ref={profileInputRef}
               onChange={handleProfilePictureChange}
             />
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               startIcon={<CloudUploadIcon />}
               onClick={() => profileInputRef.current.click()}
               size="small"
@@ -252,8 +249,8 @@ const ProfileEditForm = () => {
             {t('profile.signature')}
           </Typography>
 
-          <Tabs 
-            value={signatureMethod} 
+          <Tabs
+            value={signatureMethod}
             onChange={(e, newValue) => setSignatureMethod(newValue)}
             className="mb-4 border-b border-gray-200 dark:border-gray-700"
             textColor="primary"
@@ -262,7 +259,7 @@ const ProfileEditForm = () => {
             <Tab label="Upload Image" className="dark:text-gray-300" />
             <Tab label="Draw Signature" className="dark:text-gray-300" />
           </Tabs>
-          
+
           {signatureMethod === 0 ? (
             <Box className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 flex flex-col items-center justify-center min-h-[150px] bg-gray-50 dark:bg-gray-900/50">
               {signaturePreview ? (
@@ -272,7 +269,7 @@ const ProfileEditForm = () => {
                   {t('profile.no_signature')}
                 </Typography>
               )}
-              
+
               <Box className="flex gap-2">
                 <input
                   type="file"
@@ -281,18 +278,18 @@ const ProfileEditForm = () => {
                   ref={signatureInputRef}
                   onChange={handleSignatureChange}
                 />
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   size="small"
                   onClick={() => signatureInputRef.current.click()}
                   className="dark:text-gray-300 dark:border-gray-600"
                 >
                   {t('profile.upload_signature')}
                 </Button>
-                
+
                 {signature && (
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     color="secondary"
                     size="small"
                     startIcon={bgRemovalLoading ? <CircularProgress size={16} /> : <AutoFixHighIcon />}
@@ -306,26 +303,26 @@ const ProfileEditForm = () => {
             </Box>
           ) : (
             <Box className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white">
-              <SignatureCanvas 
+              <SignatureCanvas
                 ref={sigCanvasRef}
                 penColor="black"
                 canvasProps={{
-                  width: 500, 
-                  height: 200, 
+                  width: 500,
+                  height: 200,
                   className: 'sigCanvas w-full h-[200px] cursor-crosshair'
-                }} 
+                }}
               />
               <Box className="flex justify-end gap-2 mt-2 border-t pt-2 border-gray-100">
-                <Button 
-                  startIcon={<ClearIcon />} 
+                <Button
+                  startIcon={<ClearIcon />}
                   onClick={clearSignature}
                   size="small"
                   color="error"
                 >
                   Clear
                 </Button>
-                <Button 
-                  startIcon={<SaveIcon />} 
+                <Button
+                  startIcon={<SaveIcon />}
                   onClick={saveDrawnSignature}
                   size="small"
                   variant="contained"
@@ -338,10 +335,10 @@ const ProfileEditForm = () => {
           )}
         </Box>
 
-        <Button 
-          type="submit" 
-          variant="contained" 
-          color="primary" 
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
           size="large"
           disabled={loading}
           className="mt-2"
