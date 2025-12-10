@@ -28,8 +28,24 @@ model User {
   verificationToken String? @db.Text
   documents Document[] @relation("UploadedDocuments")
   signatureRequests SignatureRequest[] @relation("SignerRequests")
+  transactions Transaction[] @relation("CreatedTransactions")
+  balanceChanges BalanceAuditLog[] @relation("BalanceChanges")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  type        String   // INCOME, EXPENSE
+  amount      Float
+  description String   @db.Text
+  category    String
+  proofImage  String?  @db.Text
+  date        DateTime
+  createdById Int
+  createdBy   User     @relation("CreatedTransactions", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Document {
@@ -63,4 +79,23 @@ model SignatureRequest {
   rejectedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model FinanceSettings {
+  id             Int      @id @default(autoincrement())
+  initialBalance Float    @default(0)
+  balanceDate    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model BalanceAuditLog {
+  id          Int      @id @default(autoincrement())
+  oldBalance  Float
+  newBalance  Float
+  oldDate     DateTime
+  newDate     DateTime
+  changedById Int
+  changedBy   User     @relation("BalanceChanges", fields: [changedById], references: [id], onDelete: Cascade)
+  changedAt   DateTime @default(now())
 }
