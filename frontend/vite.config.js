@@ -4,7 +4,12 @@ import Pages from "vite-plugin-pages";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), Pages()],
+  plugins: [
+    react(),
+    Pages({
+      importMode: "async",
+    }),
+  ],
   server: {
     host: true,
     port: 5173,
