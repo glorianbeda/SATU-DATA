@@ -36,7 +36,7 @@ const MainLayoutContent = ({ children }) => {
             // Role name is now standardized as SUPER_ADMIN, ADMIN, MEMBER
             // Handle both object (role.name) and string (role)
             const userRole = data.user.role?.name || data.user.role || ROLES.MEMBER;
-            
+
             setUser({
                 name: data.user.name,
                 email: data.user.email,
@@ -67,22 +67,22 @@ const MainLayoutContent = ({ children }) => {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        <Sidebar 
-          isOpen={isSidebarOpen} 
-          toggleSidebar={toggleSidebar} 
+        <Sidebar
+          isOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
           isCollapsed={isCollapsed}
           user={user}
         />
-        
+
         {/* Overlay for mobile */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           ></div>
         )}
-        
-        <main className={`transition-all duration-300 p-8 ${isSidebarOpen ? 'ml-0' : 'ml-0'} ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+
+        <main className={`transition-all duration-300 p-4 md:p-8 ${isSidebarOpen ? 'ml-0' : 'ml-0'} ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
           <div className="flex items-center gap-4 mb-6">
               <div className="flex-1">
                   <Header title={title} toggleSidebar={toggleSidebar} user={user} />

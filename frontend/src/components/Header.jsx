@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useTheme } from '~/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage } from '~/i18n';
-import { 
-  Search as SearchIcon, 
+import {
+  Search as SearchIcon,
   NotificationsNone as BellIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
@@ -23,12 +23,12 @@ const Header = ({ title, toggleSidebar, user }) => {
   const { showSuccess } = useAlert();
   const [langAnchorEl, setLangAnchorEl] = useState(null);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
-  
-  const today = new Date().toLocaleDateString(i18n.language === 'id' ? 'id-ID' : 'en-GB', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
+
+  const today = new Date().toLocaleDateString(i18n.language === 'id' ? 'id-ID' : 'en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
   });
 
   const handleLanguageChange = (lang) => {
@@ -47,16 +47,16 @@ const Header = ({ title, toggleSidebar, user }) => {
   const currentLang = i18n.language === 'id' ? '🇮🇩' : '🇬🇧';
 
   return (
-    <div className="flex justify-between items-center mb-8">
-      <div className="flex items-center gap-4">
-        <IconButton 
+    <div className="flex justify-between items-start md:items-center mb-4 md:mb-8">
+      <div className="flex items-start md:items-center gap-3 md:gap-4">
+        <IconButton
           onClick={toggleSidebar}
-          className="text-gray-500 dark:text-gray-400"
+          className="text-gray-500 dark:text-gray-400 mt-[-4px] md:mt-0"
         >
           <MenuIcon />
         </IconButton>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{title}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">{title}</h1>
           <p className="text-gray-500 text-sm mt-1">{today}</p>
         </div>
       </div>
@@ -65,18 +65,18 @@ const Header = ({ title, toggleSidebar, user }) => {
         {/* Search Bar */}
         <div className="hidden md:flex items-center bg-white dark:bg-gray-800 px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 w-64">
             <SearchIcon className="text-gray-400 mr-2" fontSize="small" />
-            <input 
-                type="text" 
-                placeholder="Search..." 
+            <input
+                type="text"
+                placeholder="Search..."
                 className="bg-transparent border-none outline-none text-sm w-full text-gray-600 dark:text-gray-200 placeholder-gray-400"
             />
         </div>
 
         {/* Language Selector */}
         <Tooltip title="Change Language">
-          <button 
+          <button
             onClick={(e) => setLangAnchorEl(e.currentTarget)}
-            className="p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-colors flex items-center gap-1"
+            className="hidden md:flex p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-colors items-center gap-1"
           >
             <span className="text-lg">{currentLang}</span>
           </button>
@@ -88,13 +88,13 @@ const Header = ({ title, toggleSidebar, user }) => {
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          <MenuItem 
+          <MenuItem
             onClick={() => handleLanguageChange('id')}
             selected={i18n.language === 'id'}
           >
             🇮🇩 Bahasa Indonesia
           </MenuItem>
-          <MenuItem 
+          <MenuItem
             onClick={() => handleLanguageChange('en')}
             selected={i18n.language === 'en'}
           >
@@ -103,12 +103,12 @@ const Header = ({ title, toggleSidebar, user }) => {
         </Menu>
 
         {/* Theme Toggle Switch */}
-        <div 
+        <div
             onClick={toggleTheme}
-            className="relative w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer transition-colors duration-300 shadow-sm border border-gray-100 dark:border-gray-600"
+            className="hidden md:block relative w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer transition-colors duration-300 shadow-sm border border-gray-100 dark:border-gray-600"
         >
             {/* Toggle Circle */}
-            <div 
+            <div
                 className={`absolute top-1 left-1 w-6 h-6 bg-white dark:bg-gray-800 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
                     mode === 'dark' ? 'translate-x-8' : 'translate-x-0'
                 }`}
@@ -119,7 +119,7 @@ const Header = ({ title, toggleSidebar, user }) => {
                     <LightModeIcon sx={{ fontSize: 14, color: '#f59e0b' }} />
                 )}
             </div>
-            
+
             {/* Background Icons */}
             <div className="absolute inset-0 flex items-center justify-between px-2">
                 <LightModeIcon sx={{ fontSize: 14, color: mode === 'light' ? 'transparent' : '#9ca3af' }} />
@@ -144,8 +144,8 @@ const Header = ({ title, toggleSidebar, user }) => {
                 aria-expanded={Boolean(profileAnchorEl) ? 'true' : undefined}
             >
                 {user?.profilePicture ? (
-                    <Avatar 
-                        src={user.profilePicture.startsWith('http') ? user.profilePicture : `${import.meta.env.VITE_API_URL}${user.profilePicture}`} 
+                    <Avatar
+                        src={user.profilePicture.startsWith('http') ? user.profilePicture : `${import.meta.env.VITE_API_URL}${user.profilePicture}`}
                         sx={{ width: 40, height: 40 }}
                     />
                 ) : (
@@ -202,6 +202,23 @@ const Header = ({ title, toggleSidebar, user }) => {
                 </ListItemIcon>
                 Profile
             </MenuItem>
+
+            {/* Mobile Only Menu Items */}
+            <div className="md:hidden">
+                <Divider className="dark:border-gray-700" />
+                <MenuItem onClick={() => handleLanguageChange(i18n.language === 'id' ? 'en' : 'id')}>
+                    <ListItemIcon>
+                        <LanguageIcon fontSize="small" className="dark:text-gray-400" />
+                    </ListItemIcon>
+                    {i18n.language === 'id' ? 'Switch to English' : 'Ganti ke Indonesia'}
+                </MenuItem>
+                <MenuItem onClick={toggleTheme}>
+                    <ListItemIcon>
+                        {mode === 'dark' ? <LightModeIcon fontSize="small" className="dark:text-gray-400" /> : <DarkModeIcon fontSize="small" className="dark:text-gray-400" />}
+                    </ListItemIcon>
+                    {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </MenuItem>
+            </div>
             <MenuItem onClick={handleLogout}>
                 <ListItemIcon>
                     <LogoutIcon fontSize="small" className="dark:text-gray-400" />

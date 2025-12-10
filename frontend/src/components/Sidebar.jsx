@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   Dashboard as DashboardIcon,
   Description as DocsIcon,
   AccountBalanceWallet as WalletIcon,
@@ -28,7 +28,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
   const navigate = useNavigate();
   const [openFinance, setOpenFinance] = useState(true);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-  
+
   // Floating menu states for collapsed mode
   const [anchorElDocs, setAnchorElDocs] = useState(null);
   const [anchorElFinance, setAnchorElFinance] = useState(null);
@@ -47,7 +47,6 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
 
   const menuItems = [
     { text: t('sidebar.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
-    { text: t('sidebar.balance'), icon: <WalletIcon />, path: '/balance' },
   ];
 
   const adminItems = [
@@ -63,6 +62,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
   const financeItems = [
     { text: t('sidebar.income'), icon: <TrendingUp />, path: '/finance/income' },
     { text: t('sidebar.expense'), icon: <TrendingDown />, path: '/finance/expense' },
+    { text: t('sidebar.balance'), icon: <WalletIcon />, path: '/finance/balance' },
   ];
 
   const bottomItems = [
@@ -74,10 +74,10 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
 
   const ListItemLink = ({ item, nested = false }) => {
     const content = (
-      <div 
+      <div
         className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 mx-2 rounded-xl transition-colors duration-200 ${
-          isActive(item.path) 
-            ? 'bg-blue-600 text-white shadow-md' 
+          isActive(item.path)
+            ? 'bg-blue-600 text-white shadow-md'
             : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
         } ${nested && !isCollapsed ? 'pl-8' : ''}`}
       >
@@ -106,7 +106,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
   };
 
   return (
-    <div className={`h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col fixed left-0 top-0 z-50 transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <div className={`fixed left-0 top-0 bottom-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col z-50 transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       {/* Logo */}
       <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         <div className="flex items-center gap-3">
@@ -115,8 +115,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
             </div>
             {!isCollapsed && <h1 className="text-xl font-bold text-gray-800 dark:text-white whitespace-nowrap">Satu Data+</h1>}
         </div>
-        <IconButton 
-            onClick={toggleSidebar} 
+        <IconButton
+            onClick={toggleSidebar}
             sx={{ display: { lg: 'none' } }}
             className="text-gray-500 dark:text-gray-400"
             size="small"
@@ -128,7 +128,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
       {/* Menu */}
       <div className="flex-1 overflow-y-auto py-4 space-y-1 overflow-x-hidden">
         {!isCollapsed && <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">{t('sidebar.menu')}</p>}
-        
+
         {menuItems.map((item) => (
           <ListItemLink key={item.text} item={item} />
         ))}
@@ -137,7 +137,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
         {isCollapsed ? (
             <>
                 <Tooltip title={t('sidebar.omk_docs')} placement="right">
-                    <div 
+                    <div
                         className="flex items-center justify-center px-2 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
                         onClick={(e) => setAnchorElDocs(e.currentTarget)}
                     >
@@ -174,7 +174,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
             </>
         ) : (
             <>
-                <div 
+                <div
                     className="flex items-center px-4 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
                     onClick={() => setOpenDocs(!openDocs)}
                 >
@@ -184,7 +184,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
                     <span className="font-medium text-sm flex-1">{t('sidebar.omk_docs')}</span>
                     {openDocs ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                 </div>
-                
+
                 <Collapse in={openDocs} timeout="auto" unmountOnExit>
                     <div className="space-y-1 mt-1">
                         {docsItems.map((item) => (
@@ -211,7 +211,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
           isCollapsed ? (
             <>
                 <Tooltip title={t('sidebar.finance')} placement="right">
-                    <div 
+                    <div
                         className="flex items-center justify-center px-2 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
                         onClick={(e) => setAnchorElFinance(e.currentTarget)}
                     >
@@ -248,7 +248,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
             </>
           ) : (
             <>
-                <div 
+                <div
                     className="flex items-center px-4 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
                     onClick={() => setOpenFinance(!openFinance)}
                 >
@@ -258,7 +258,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
                     <span className="font-medium text-sm flex-1">{t('sidebar.finance')}</span>
                     {openFinance ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                 </div>
-                
+
                 <Collapse in={openFinance} timeout="auto" unmountOnExit>
                     <div className="space-y-1 mt-1">
                         {financeItems.map((item) => (
@@ -271,7 +271,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
         )}
 
         <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
-        
+
         {!isCollapsed && <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">{t('sidebar.tools')}</p>}
         {bottomItems.map((item) => (
             <ListItemLink key={item.text} item={item} />
