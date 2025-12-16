@@ -172,16 +172,16 @@ const DataTable = ({
   return (
     <Paper elevation={0} className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
       {/* Toolbar */}
-      <Toolbar className="flex justify-between gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-        <Box className="flex items-center gap-3">
+      <Toolbar className="flex flex-col md:flex-row justify-between gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+        <Box className="flex items-center gap-3 w-full md:w-auto">
           {title && (
-            <Typography variant="h6" className="font-semibold text-gray-800 dark:text-white">
+            <Typography variant="h6" className="font-semibold text-gray-800 dark:text-white text-base md:text-lg">
               {title}
             </Typography>
           )}
         </Box>
 
-        <Box className="flex items-center gap-2">
+        <Box className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-end">
           {actions}
           {searchable && (
             <TextField
@@ -199,7 +199,7 @@ const DataTable = ({
                   </InputAdornment>
                 ),
               }}
-              className="w-64"
+              className="w-full md:w-64"
               sx={{
                 '& .MuiOutlinedInput-root': {
                   backgroundColor: isDark ? 'rgb(31, 41, 55)' : 'white',
@@ -249,9 +249,50 @@ const DataTable = ({
         </Box>
       </Toolbar>
 
-      {/* Table */}
-      <TableContainer>
-        <Table>
+      {/* Mobile Card View */}
+      <Box className="block md:hidden">
+        {loading ? (
+          <Box className="p-4 space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Box key={i} className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse">
+                <Box className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-2"></Box>
+                <Box className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></Box>
+              </Box>
+            ))}
+          </Box>
+        ) : paginatedData.length === 0 ? (
+          <Box className="p-8 text-center text-gray-500 dark:text-gray-400">
+            {emptyMessage}
+          </Box>
+        ) : (
+          <Box className="divide-y divide-gray-200 dark:divide-gray-700">
+            {paginatedData.map((row, rowIndex) => (
+              <Box
+                key={row.id || rowIndex}
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+              >
+                {columns.map((col) => (
+                  <Box key={col.field} className="flex justify-between items-start py-1">
+                    <Typography
+                      variant="caption"
+                      className="text-gray-500 dark:text-gray-400 font-medium uppercase text-xs"
+                    >
+                      {col.headerName}
+                    </Typography>
+                    <Box className="text-right text-gray-900 dark:text-white text-sm">
+                      {col.renderCell ? col.renderCell(row) : row[col.field]}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      {/* Desktop Table View */}
+      <TableContainer sx={{ overflowX: 'auto' }} className="hidden md:block">
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: isDark ? 'rgb(31, 41, 55)' : 'rgb(249, 250, 251)' }}>
               {columns.map((col) => (
