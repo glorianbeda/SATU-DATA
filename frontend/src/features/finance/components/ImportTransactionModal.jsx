@@ -86,7 +86,18 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
         }
 
         const headers = jsonData[0];
-        const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+        // Create case-insensitive header mapping
+        const headerMap = {};
+        headers.forEach((h, index) => {
+          if (h) {
+            headerMap[h.toString().toLowerCase()] = index;
+          }
+        });
+
+        // Check for missing columns (case-insensitive)
+        const missingColumns = requiredColumns.filter(col => 
+          !Object.keys(headerMap).includes(col.toLowerCase())
+        );
 
         if (missingColumns.length > 0) {
           setErrors([`Missing columns: ${missingColumns.join(', ')}`]);
@@ -94,12 +105,14 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
           return;
         }
 
+        // Parse data using case-insensitive header matching
         const parsedData = jsonData.slice(1).map((row, index) => {
-          const rowData = {};
-          headers.forEach((header, i) => {
-            rowData[header] = row[i];
-          });
-          return rowData;
+          return {
+            Date: row[headerMap['date']],
+            Amount: row[headerMap['amount']],
+            Category: row[headerMap['category']],
+            Description: row[headerMap['description']]
+          };
         }).filter(row => row.Date && row.Amount); // Basic filter for empty rows
 
         setData(parsedData);

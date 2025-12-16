@@ -1,26 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button, IconButton, Tooltip } from '@mui/material';
-import { Save as SaveIcon, Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Add as AddIcon, Delete as DeleteIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useAlert } from '../context/AlertContext';
 
 const QuickEdit = () => {
   const { t } = useTranslation();
   const { showSuccess, showError, showWarning } = useAlert();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const transactionType = searchParams.get('type'); // 'INCOME' or 'EXPENSE'
+  
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [transactionType]);
 
   const fetchTransactions = async () => {
     setLoading(true);
     try {
+      const params = { limit: 100 };
+      if (transactionType) {
+        params.type = transactionType;
+      }
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/transactions`, {
-        params: { limit: 100 },
+        params,
         withCredentials: true
       });
       setTransactions(response.data.transactions);
@@ -43,7 +52,7 @@ const QuickEdit = () => {
       {
         id: null,
         date: new Date().toISOString().split('T')[0],
-        type: 'INCOME',
+        type: transactionType || 'INCOME',
         description: '',
         category: '',
         amount: '',
@@ -216,12 +225,33 @@ const QuickEdit = () => {
 
   if (loading) return <div className="p-6">Loading...</div>;
 
+  const pageTitle = transactionType === 'INCOME' 
+    ? t('quick_edit.title_income', 'Edit Pemasukan')
+    : transactionType === 'EXPENSE'
+    ? t('quick_edit.title_expense', 'Edit Pengeluaran')
+    : t('quick_edit.title', 'Edit Cepat');
+
+  const backPath = transactionType === 'INCOME' 
+    ? '/finance/income'
+    : transactionType === 'EXPENSE'
+    ? '/finance/expense'
+    : null;
+
   return (
-    <div className="p-6 h-screen flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('quick_edit.title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1" dangerouslySetInnerHTML={{ __html: t('quick_edit.info') }} />
+    <div className="p-4 md:p-6 h-screen flex flex-col">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+        <div className="flex items-center gap-3">
+          {backPath && (
+            <Tooltip title={t('common.back', 'Kembali')}>
+              <IconButton onClick={() => navigate(backPath)} className="text-gray-600 dark:text-gray-300">
+                <ArrowBackIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">{pageTitle}</h1>
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1" dangerouslySetInnerHTML={{ __html: t('quick_edit.info') }} />
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
@@ -243,7 +273,84 @@ const QuickEdit = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700">
+      {/* Mobile Card View */}
+      <div className="block md:hidden flex-1 overflow-auto space-y-3 p-4">
+        {transactions.map((transaction, index) => (
+          <div 
+            key={transaction.id || `new-${index}`} 
+            className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4"
+          >
+            <div className="flex justify-between items-start mb-3">
+              <span className="text-xs font-medium text-gray-400">#{index + 1}</span>
+              <Tooltip title="Delete">
+                <IconButton size="small" onClick={() => handleDeleteRow(index)} color="error">
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">{t('quick_edit.date')}</label>
+                <input
+                  type="date"
+                  value={new Date(transaction.date).toISOString().split('T')[0]}
+                  onChange={(e) => handleChange(index, 'date', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">{t('quick_edit.type')}</label>
+                <select
+                  value={transaction.type}
+                  onChange={(e) => handleChange(index, 'type', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="INCOME">{t('quick_edit.income')}</option>
+                  <option value="EXPENSE">{t('quick_edit.expense')}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">{t('quick_edit.description')}</label>
+                <input
+                  type="text"
+                  value={transaction.description}
+                  onChange={(e) => handleChange(index, 'description', e.target.value)}
+                  placeholder={t('quick_edit.description')}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">{t('quick_edit.category')}</label>
+                <input
+                  type="text"
+                  value={transaction.category}
+                  onChange={(e) => handleChange(index, 'category', e.target.value)}
+                  placeholder={t('quick_edit.category')}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">{t('quick_edit.amount')}</label>
+                <input
+                  type="number"
+                  value={transaction.amount}
+                  onChange={(e) => handleChange(index, 'amount', e.target.value)}
+                  placeholder="0"
+                  className="w-full mt-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-mono text-right focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700">
         <table className="w-full text-sm text-left border-collapse">
             <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-900 dark:text-gray-400 sticky top-0 z-10 shadow-sm">
                 <tr>
