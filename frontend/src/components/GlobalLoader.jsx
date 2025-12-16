@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import NProgress from 'nprogress';
-import { motion, AnimatePresence } from 'motion/react';
 
-// Configure NProgress
+// Configure NProgress for a slim, fast loading bar
 NProgress.configure({
   showSpinner: false,
   minimum: 0.1,
@@ -11,17 +10,19 @@ NProgress.configure({
   trickleSpeed: 100,
 });
 
+/**
+ * GlobalLoader - Non-intrusive loading indicator for SPA navigation
+ * 
+ * Only shows NProgress bar at top of viewport.
+ * NO fullscreen overlay - sidebar/header remain visible during navigation.
+ */
 const GlobalLoader = () => {
   const location = useLocation();
-  const navigationType = useNavigationType();
-  const [isLoading, setIsLoading] = useState(false);
   const [previousPath, setPreviousPath] = useState(location.pathname);
 
   useEffect(() => {
-    // Detect actual navigation (not initial load)
+    // Navigation completed - stop loading bar
     if (previousPath !== location.pathname) {
-      // Navigation completed - stop loading
-      setIsLoading(false);
       NProgress.done();
       setPreviousPath(location.pathname);
     }
@@ -36,7 +37,6 @@ const GlobalLoader = () => {
       const href = target.getAttribute('href');
       // Only for internal links that will cause navigation
       if (href && href.startsWith('/') && href !== location.pathname) {
-        setIsLoading(true);
         NProgress.start();
       }
     };
@@ -49,76 +49,22 @@ const GlobalLoader = () => {
     };
   }, [location.pathname]);
 
-  // Also listen for programmatic navigation (useNavigate calls)
+  // Listen for programmatic navigation (useNavigate calls)
   useEffect(() => {
     const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
 
     window.history.pushState = function(...args) {
-      setIsLoading(true);
       NProgress.start();
       return originalPushState.apply(this, args);
     };
 
-    window.history.replaceState = function(...args) {
-      // Don't show loading for replace (usually not a real navigation)
-      return originalReplaceState.apply(this, args);
-    };
-
     return () => {
       window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
     };
   }, []);
 
-  // Fallback: ensure loading is hidden after a maximum time
-  useEffect(() => {
-    if (isLoading) {
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-        NProgress.done();
-      }, 5000); // Max 5 seconds
-      return () => clearTimeout(timeout);
-    }
-  }, [isLoading]);
-
-  return (
-    <AnimatePresence>
-      {isLoading && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          <motion.div
-            className="flex flex-col items-center gap-4"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="relative">
-              <motion.div
-                className="w-12 h-12 border-4 border-blue-200 dark:border-blue-900 rounded-full"
-                style={{ borderTopColor: '#3b82f6' }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-              />
-            </div>
-            <motion.p
-              className="text-gray-600 dark:text-gray-400 text-sm font-medium"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              Memuat...
-            </motion.p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+  // No visual component - only NProgress bar (rendered via CSS)
+  return null;
 };
 
 export default GlobalLoader;

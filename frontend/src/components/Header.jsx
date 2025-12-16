@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTheme } from '~/context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage } from '~/i18n';
@@ -12,17 +12,32 @@ import {
   Logout as LogoutIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
-import { Menu, MenuItem, IconButton, Tooltip, Avatar, ListItemIcon, Divider } from '@mui/material';
+import { 
+  Menu, 
+  MenuItem, 
+  IconButton, 
+  Tooltip, 
+  Avatar, 
+  ListItemIcon, 
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAlert } from '~/context/AlertContext';
 
 const Header = ({ title, toggleSidebar, user }) => {
   const { mode, toggleTheme } = useTheme();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { showSuccess } = useAlert();
   const [langAnchorEl, setLangAnchorEl] = useState(null);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const today = new Date().toLocaleDateString(i18n.language === 'id' ? 'id-ID' : 'en-GB', {
     weekday: 'long',
@@ -31,18 +46,36 @@ const Header = ({ title, toggleSidebar, user }) => {
     year: 'numeric'
   });
 
-  const handleLanguageChange = (lang) => {
+  const handleLanguageChange = useCallback((lang) => {
     changeLanguage(lang);
     setLangAnchorEl(null);
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogoutClick = useCallback(() => {
     setProfileAnchorEl(null);
+    setLogoutDialogOpen(true);
+  }, []);
+
+  const handleLogoutConfirm = useCallback(async () => {
+    setLogoutDialogOpen(false);
+    
+    // Call API to clear cookie
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/logout`, { 
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (err) {
+      console.error('Logout API failed', err);
+    }
+    
+    // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    showSuccess('Logged out successfully');
+    
+    showSuccess(t('common.logout_success') || 'Logged out successfully');
     navigate('/login');
-  };
+  }, [navigate, showSuccess, t]);
 
   const currentLang = i18n.language === 'id' ? '🇮🇩' : '🇬🇧';
 
@@ -73,7 +106,7 @@ const Header = ({ title, toggleSidebar, user }) => {
         </div>
 
         {/* Language Selector */}
-        <Tooltip title="Change Language">
+        <Tooltip title={t('header.change_language') || 'Change Language'}>
           <button
             onClick={(e) => setLangAnchorEl(e.currentTarget)}
             className="hidden md:flex p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-colors items-center gap-1"
@@ -134,7 +167,7 @@ const Header = ({ title, toggleSidebar, user }) => {
         </button>
 
         {/* Profile Dropdown */}
-        <Tooltip title="Account settings">
+        <Tooltip title={t('header.account_settings') || 'Account settings'}>
             <IconButton
                 onClick={(e) => setProfileAnchorEl(e.currentTarget)}
                 size="small"
@@ -219,16 +252,44 @@ const Header = ({ title, toggleSidebar, user }) => {
                     {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </MenuItem>
             </div>
-            <MenuItem onClick={handleLogout}>
+            <MenuItem onClick={handleLogoutClick}>
                 <ListItemIcon>
                     <LogoutIcon fontSize="small" className="dark:text-gray-400" />
                 </ListItemIcon>
-                Logout
+                {t('logout') || 'Logout'}
             </MenuItem>
         </Menu>
+
+        {/* Logout Confirmation Dialog */}
+        <Dialog
+          open={logoutDialogOpen}
+          onClose={() => setLogoutDialogOpen(false)}
+          aria-labelledby="logout-dialog-title"
+          aria-describedby="logout-dialog-description"
+          PaperProps={{
+            className: "dark:bg-gray-800 dark:text-white"
+          }}
+        >
+          <DialogTitle id="logout-dialog-title" className="dark:text-white">
+            {t('common.logout_confirm_title') || 'Confirm Logout'}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="logout-dialog-description" className="dark:text-gray-300">
+              {t('common.logout_confirm_message') || 'Are you sure you want to logout from the application?'}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setLogoutDialogOpen(false)} className="dark:text-gray-300">
+              {t('common.cancel') || 'Cancel'}
+            </Button>
+            <Button onClick={handleLogoutConfirm} color="error" variant="contained" autoFocus>
+              {t('common.logout') || 'Logout'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );
 };
 
-export default Header;
+export default React.memo(Header);

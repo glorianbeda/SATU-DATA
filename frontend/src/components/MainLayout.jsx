@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -50,15 +50,15 @@ const MainLayoutContent = ({ children }) => {
     };
 
     fetchProfile();
-  }, [isPublic, location.pathname]); // Re-fetch if needed, but mostly on mount/auth change
+  }, [isPublic]); // Only fetch once when entering protected area, not on every navigation
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     if (window.innerWidth < 1024) {
-      setIsSidebarOpen(!isSidebarOpen);
+      setIsSidebarOpen(prev => !prev);
     } else {
-      setIsCollapsed(!isCollapsed);
+      setIsCollapsed(prev => !prev);
     }
-  };
+  }, []);
 
   if (isPublic) {
     return <>{children}</>;
@@ -89,7 +89,7 @@ const MainLayoutContent = ({ children }) => {
               </div>
           </div>
 
-          <div className="w-full">
+          <div className="w-full overflow-x-auto">
               {children}
           </div>
         </main>

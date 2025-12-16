@@ -1,8 +1,5 @@
-# page-loading Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change enhance-ux-loading-and-wallet. Update Purpose after archive.
-## Requirements
 ### Requirement: Immediate Page Loading Feedback
 
 The system MUST display a loading indicator immediately when navigation begins. The loading indicator MUST be **non-intrusive** and keep the main layout (sidebar, header) visible.
@@ -50,4 +47,3 @@ Loading indicators MUST appear before data fetching begins, providing instant fe
   3. Page component loads (code splitting)
   4. Data fetching begins (page handles own loading state)
   5. Data loads and page renders fully
-
