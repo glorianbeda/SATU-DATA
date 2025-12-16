@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Box, Typography, Paper, IconButton, Tooltip, TextField, Chip } from '@mui/material';
+import { Box, Typography, Paper, IconButton, Tooltip, TextField, Chip, Slider } from '@mui/material';
 import { Document, Page, pdfjs } from 'react-pdf';
 import Draggable from 'react-draggable';
 import DrawIcon from '@mui/icons-material/Draw';
@@ -73,6 +73,9 @@ const DraggableAnnotation = ({
   width,
   height,
   signerName,
+  signatureUrl,
+  signerInitial,
+  fontSize = 12,
   onPositionChange, 
   onResize,
   onDelete, 
@@ -121,13 +124,13 @@ const DraggableAnnotation = ({
   const getLabel = () => {
     switch (type) {
       case ANNOTATION_TYPES.SIGNATURE:
-        return 'Tanda Tangan';
+        return signatureUrl ? null : 'Tanda Tangan';
       case ANNOTATION_TYPES.DATE:
         return new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       case ANNOTATION_TYPES.TEXT:
         return text || 'Teks';
       case ANNOTATION_TYPES.INITIAL:
-        return 'Paraf';
+        return signerInitial || 'Paraf';
       default:
         return '';
     }
@@ -208,12 +211,23 @@ const DraggableAnnotation = ({
             onBlur={() => setIsEditing(false)}
             autoFocus
             className="bg-white rounded text-xs"
-            inputProps={{ style: { fontSize: 12, padding: '2px 8px' } }}
+            inputProps={{ style: { fontSize: fontSize, padding: '2px 8px' } }}
+          />
+        ) : type === ANNOTATION_TYPES.SIGNATURE && signatureUrl ? (
+          <img 
+            src={signatureUrl} 
+            alt="Signature" 
+            style={{ 
+              maxWidth: '90%', 
+              maxHeight: '90%', 
+              objectFit: 'contain',
+              pointerEvents: 'none'
+            }} 
           />
         ) : (
           <Typography 
             variant="caption" 
-            sx={{ fontWeight: 'bold', textAlign: 'center', px: 1 }}
+            sx={{ fontWeight: 'bold', textAlign: 'center', px: 1, fontSize: `${fontSize}px` }}
             onClick={() => type === ANNOTATION_TYPES.TEXT && setIsEditing(true)}
           >
             {getLabel()}
@@ -231,10 +245,38 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
   const [selectedTool, setSelectedTool] = useState(null);
   const [selectedSigner, setSelectedSigner] = useState(null);
   const [containerWidth, setContainerWidth] = useState(600);
+  const [fontSize, setFontSize] = useState(12);
   const containerRef = useRef(null);
   const pdfContainerRef = useRef(null);
 
   const isSelfMode = mode === 'self';
+
+  // Get signature URL for current user (self-mode) or selected signer
+  const getSignatureUrl = (annotation) => {
+    if (isSelfMode && currentUser?.sign) {
+      return currentUser.sign.startsWith('http') 
+        ? currentUser.sign 
+        : `${import.meta.env.VITE_API_URL}${currentUser.sign}`;
+    }
+    // For request mode, could show signer's signature if available
+    const signer = signers?.find(s => s.id === annotation.signerId);
+    if (signer?.sign) {
+      return signer.sign.startsWith('http')
+        ? signer.sign
+        : `${import.meta.env.VITE_API_URL}${signer.sign}`;
+    }
+    return null;
+  };
+
+  // Get initials for paraf
+  const getInitials = (name) => {
+    if (!name) return 'XX';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   // Calculate container width on mount and resize
   useEffect(() => {
@@ -481,6 +523,9 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
                     height={annotation.height}
                     text={annotation.text}
                     signerName={annotation.signerName}
+                    signatureUrl={getSignatureUrl(annotation)}
+                    signerInitial={getInitials(annotation.signerName || currentUser?.name)}
+                    fontSize={fontSize}
                     onPositionChange={handlePositionChange}
                     onResize={handleResize}
                     onDelete={handleDelete}
@@ -523,6 +568,25 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
         ))}
 
         <Box sx={{ flex: 1 }} />
+
+        {/* Font Size Control */}
+        <Box sx={{ width: '100%', px: 0.5 }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', fontSize: '0.65rem' }}>
+            SIZE
+          </Typography>
+          <Slider
+            value={fontSize}
+            onChange={(e, newValue) => setFontSize(newValue)}
+            min={8}
+            max={24}
+            step={1}
+            size="small"
+            sx={{ mt: 0.5, mb: 1 }}
+          />
+          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
+            {fontSize}px
+          </Typography>
+        </Box>
         
         <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.disabled', fontSize: '0.7rem' }}>
           {annotations.length} item

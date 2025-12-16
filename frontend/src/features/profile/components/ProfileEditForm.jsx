@@ -306,6 +306,8 @@ const ProfileEditForm = () => {
               <SignatureCanvas
                 ref={sigCanvasRef}
                 penColor="black"
+                minWidth={2}
+                maxWidth={4}
                 canvasProps={{
                   width: 500,
                   height: 200,
