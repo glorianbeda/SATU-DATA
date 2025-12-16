@@ -33,7 +33,7 @@ const Auth = ({ initialIsLogin = true }) => {
   const direction = isLogin ? -1 : 1;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden bg-white dark:bg-gray-900">
         {/* Left Side - Image/Branding */}
         <div className="hidden md:flex md:w-5/12 relative bg-gray-900">
             <img
@@ -49,7 +49,7 @@ const Auth = ({ initialIsLogin = true }) => {
         </div>
 
         {/* Right Side - Auth Form */}
-        <div className="w-full md:w-7/12 flex items-center justify-center bg-white relative overflow-hidden">
+        <div className="w-full md:w-7/12 flex items-center justify-center bg-white dark:bg-gray-900 relative overflow-hidden">
             <div className="w-full max-w-md p-4">
                 <AnimatePresence initial={false} custom={direction} mode="wait">
                     <motion.div

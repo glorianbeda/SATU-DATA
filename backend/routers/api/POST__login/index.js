@@ -53,6 +53,7 @@ module.exports = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict", // or 'lax' depending on requirements, strict is safer but can be tricky with redirects
       maxAge: 24 * 60 * 60 * 1000, // 1 day
+      path: "/",
     });
 
     res.json({

@@ -7,13 +7,17 @@ import {
     Typography,
     Alert,
     CircularProgress,
-    Grid
+    Grid,
+    InputAdornment,
+    IconButton
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { LOGIN_API } from '../constants/api';
 
 const LoginForm = ({ onSwitch }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -75,7 +79,18 @@ const LoginForm = ({ onSwitch }) => {
                 </Alert>
             )}
 
-            <Box component="form" noValidate onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
+            <Box
+                component="form"
+                onSubmit={handleLogin}
+                noValidate
+                sx={{
+                    mt: 1,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}
+            >
                 <TextField
                     margin="normal"
                     required
@@ -87,7 +102,30 @@ const LoginForm = ({ onSwitch }) => {
                     autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    sx={{ mb: 2 }}
+                    error={!!error}
+                    disabled={loading}
+                    InputProps={{
+                        className: "dark:text-white"
+                    }}
+                    InputLabelProps={{
+                        className: "dark:text-gray-400"
+                    }}
+                    sx={{
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                                borderColor: 'rgba(0, 0, 0, 0.23)',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: 'rgba(0, 0, 0, 0.87)',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: '#1976d2',
+                            },
+                            '&.dark .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'rgba(255, 255, 255, 0.23)',
+                            },
+                        },
+                    }}
                 />
                 <TextField
                     margin="normal"
@@ -95,20 +133,39 @@ const LoginForm = ({ onSwitch }) => {
                     fullWidth
                     name="password"
                     label={t('password_label')}
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     id="password"
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    sx={{ mb: 3 }}
+                    error={!!error}
+                    disabled={loading}
+                    InputProps={{
+                        className: "dark:text-white",
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    aria-label="toggle password visibility"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    edge="end"
+                                    className="dark:text-gray-400"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                    }}
+                    InputLabelProps={{
+                        className: "dark:text-gray-400"
+                    }}
                 />
+
                 <Button
                     type="submit"
                     fullWidth
                     variant="contained"
-                    size="large"
+                    sx={{ mt: 3, mb: 2, py: 1.5 }}
                     disabled={loading}
-                    sx={{ mt: 1, mb: 2, py: 1.5, fontSize: '1rem' }}
                 >
                     {loading ? <CircularProgress size={24} color="inherit" /> : t('sign_in')}
                 </Button>
