@@ -8,6 +8,7 @@
 - **Backend**: Node.js, Express, Prisma (ORM), Redis, JWT, Bcryptjs
 - **Database**: MySQL (via Prisma)
 - **Infrastructure**: Docker, Docker Compose
+- **Package Manager**: Yarn (use `yarn` instead of `npm` for all commands)
 - **Language**: JavaScript (ES6+)
 
 ## Project Conventions
@@ -20,7 +21,7 @@
 ### Architecture Patterns
 - **Frontend**: Feature-based architecture (`src/features/*`), file-based routing (`src/pages/*`).
 - **Backend**: REST API with Express, Prisma for data access.
-- **Generators**: Custom scripts (`npm run make:feature`, `npm run make:module`) for scaffolding.
+- **Generators**: Custom scripts (`yarn make:feature`, `yarn make:module`) for scaffolding.
 
 ### Testing Strategy
 - [To be defined - currently manual testing implied]
