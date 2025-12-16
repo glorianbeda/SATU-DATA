@@ -8,6 +8,10 @@
   "network_error": "Network error. Please try again.",
   "app_name": "Satu Data+",
   "app_tagline": "Integrated Management System",
+  "header": {
+    "change_language": "Change Language",
+    "account_settings": "Account Settings"
+  },
   "dashboard": {
     "title": "Dashboard Admin",
     "balance_card": {
@@ -45,6 +49,7 @@
     "report_pdf": "Report to PDF",
     "quick_edit": "Quick Edit",
     "sign_system": "Sign System",
+    "image_splitter": "Image Splitter",
     "logout": "Logout"
   },
   "profile": {
@@ -172,5 +177,22 @@
     "changed_at": "Time",
     "income": "Income",
     "expense": "Expense"
+  },
+  "imageSplitter": {
+    "title": "Image Splitter",
+    "uploadPrompt": "Drop image here or click to upload",
+    "rows": "Rows",
+    "columns": "Columns",
+    "gridSize": "Grid Size",
+    "exportAll": "Export All",
+    "preview": "Preview",
+    "dragToReposition": "Drag to reposition crop area",
+    "cellSize": "Cell Size: A4 (210×297mm)",
+    "invalidFile": "Please upload a valid image file (PNG, JPG, WEBP)",
+    "exportSuccess": "Images exported successfully",
+    "processing": "Processing...",
+    "downloadZip": "Download as ZIP",
+    "downloadPdf": "Download as PDF",
+    "reset": "Reset"
   }
 }

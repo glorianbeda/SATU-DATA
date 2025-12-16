@@ -8,6 +8,10 @@
   "network_error": "Kesalahan jaringan. Silakan coba lagi.",
   "app_name": "Satu Data+",
   "app_tagline": "Sistem Manajemen Terintegrasi",
+  "header": {
+    "change_language": "Ganti Bahasa",
+    "account_settings": "Pengaturan Akun"
+  },
   "dashboard": {
     "title": "Dashboard Admin",
     "balance_card": {
@@ -45,6 +49,7 @@
     "report_pdf": "Lapor ke PDF",
     "quick_edit": "Edit Cepat",
     "sign_system": "Sistem Tanda",
+    "image_splitter": "Pemisah Gambar",
     "logout": "Keluar"
   },
   "profile": {
@@ -128,7 +133,11 @@
     "amount": "Jumlah",
     "created_by": "Dibuat Oleh",
     "add": "Tambah",
-    "view": "Lihat"
+    "view": "Lihat",
+    "actions": "Aksi",
+    "confirm_delete": "Konfirmasi Hapus",
+    "back": "Kembali",
+    "import": "Impor"
   },
   "finance": {
     "income": "Pemasukan",
@@ -190,5 +199,22 @@
     "changed_at": "Waktu",
     "income": "Pemasukan",
     "expense": "Pengeluaran"
+  },
+  "imageSplitter": {
+    "title": "Pemisah Gambar",
+    "uploadPrompt": "Letakkan gambar di sini atau klik untuk upload",
+    "rows": "Baris",
+    "columns": "Kolom",
+    "gridSize": "Ukuran Grid",
+    "exportAll": "Ekspor Semua",
+    "preview": "Pratinjau",
+    "dragToReposition": "Geser untuk memindahkan area crop",
+    "cellSize": "Ukuran Sel: A4 (210×297mm)",
+    "invalidFile": "Silakan upload file gambar yang valid (PNG, JPG, WEBP)",
+    "exportSuccess": "Gambar berhasil diekspor",
+    "processing": "Memproses...",
+    "downloadZip": "Unduh sebagai ZIP",
+    "downloadPdf": "Unduh sebagai PDF",
+    "reset": "Reset"
   }
 }
