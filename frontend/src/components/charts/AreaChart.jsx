@@ -30,18 +30,7 @@ const AreaChart = ({
   const isDark = mode === 'dark';
 
   const defaultOptions = {
-    chart: {
-      type: 'area',
-      fontFamily: 'Plus Jakarta Sans, sans-serif',
-      toolbar: {
-        show: false,
-      },
-      zoom: {
-        enabled: false,
-      },
-      stacked: stacked,
-      background: 'transparent',
-    },
+
     theme: {
       mode: isDark ? 'dark' : 'light',
     },

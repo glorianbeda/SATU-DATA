@@ -5,7 +5,7 @@ import { IconButton } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { ProtectedRoute } from '~/components/RouteGuard';
 import { useTheme } from '~/context/ThemeContext';
-
+import api from '~/utils/api';
 import { ROLES } from '~/config/roles';
 
 /**
@@ -28,24 +28,14 @@ const AppLayout = ({ children, title = '' }) => {
   React.useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        const response = await api.get('/api/profile');
+        const data = response.data;
+        setUser({
+          name: data.user.name || 'Super Admin',
+          email: data.user.email || 'admin@satudata.com',
+          profilePicture: data.user.profilePicture,
+          role: data.user.role || ROLES.MEMBER
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUser({
-            name: data.user.name || 'Super Admin',
-            email: data.user.email || 'admin@satudata.com',
-            profilePicture: data.user.profilePicture,
-            role: data.user.role || ROLES.MEMBER
-          });
-        }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
       }

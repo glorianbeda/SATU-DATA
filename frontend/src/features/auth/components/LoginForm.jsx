@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import {
     Box,
     Button,
@@ -20,6 +21,7 @@ const LoginForm = ({ onSwitch }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [searchParams] = useSearchParams();
 
     const { t } = useTranslation();
 
@@ -43,7 +45,10 @@ const LoginForm = ({ onSwitch }) => {
             if (response.ok) {
                 // Cookie is set by server
                 localStorage.setItem('user', JSON.stringify(data.user));
-                window.location.href = '/dashboard'; // Redirect to dashboard
+                
+                // Check for redirect parameter
+                const redirectUrl = searchParams.get('redirect');
+                window.location.href = redirectUrl || '/dashboard';
             } else {
                 setError(data.error || t('login_failed'));
             }

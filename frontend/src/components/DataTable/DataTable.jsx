@@ -27,6 +27,7 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { useTheme } from '~/context/ThemeContext';
 import TableSkeleton from './TableSkeleton';
 
@@ -122,24 +123,26 @@ const DataTable = ({
     return row[col.field];
   };
 
-  // Export to CSV
-  const exportToCSV = () => {
+  // Export to Excel
+  const exportToExcel = () => {
     const exportColumns = columns.filter((col) => col.exportable !== false);
-    const headers = exportColumns.map((col) => col.headerName).join(',');
-    const rows = sortedData.map((row) =>
-      exportColumns.map((col) => {
-        const value = getCellValue(row, col);
-        // Escape quotes and wrap in quotes if contains comma
-        const escaped = String(value ?? '').replace(/"/g, '""');
-        return escaped.includes(',') ? `"${escaped}"` : escaped;
-      }).join(',')
-    );
-    const csv = [headers, ...rows].join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${title || 'data'}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    
+    // Transform data for Excel
+    const excelData = sortedData.map(row => {
+        const rowData = {};
+        exportColumns.forEach(col => {
+            rowData[col.headerName] = getCellValue(row, col);
+        });
+        return rowData;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    
+    const fileName = `${title || 'data'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
     setExportAnchorEl(null);
   };
 
@@ -235,9 +238,9 @@ const DataTable = ({
                 open={Boolean(exportAnchorEl)}
                 onClose={() => setExportAnchorEl(null)}
               >
-                <MenuItem onClick={exportToCSV}>
+                <MenuItem onClick={exportToExcel}>
                   <FileDownloadIcon fontSize="small" className="mr-2" />
-                  Export as CSV
+                  Export as Excel
                 </MenuItem>
                 <MenuItem onClick={exportToPDF}>
                   <PictureAsPdfIcon fontSize="small" className="mr-2" />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import api from '~/utils/api';
 import { 
   TextField, 
   Button, 
@@ -29,16 +29,9 @@ const ChangePasswordForm = () => {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const token = localStorage.getItem('token');
-
-      await axios.put(`${apiUrl}/api/profile/password`, {
+      await api.put('/api/profile/password', {
         oldPassword,
         newPassword
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
       });
 
       setMessage({ type: 'success', text: t('profile.password_updated') });

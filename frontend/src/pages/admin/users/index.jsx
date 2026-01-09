@@ -36,6 +36,7 @@ const UserManagement = () => {
   const [editDialog, setEditDialog] = useState({ open: false, user: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
   const [roleConfirmDialog, setRoleConfirmDialog] = useState({ open: false, user: null, roleId: null, roleName: '' });
+  const [currentUser, setCurrentUser] = useState(null);
 
   const { showSuccess, showError } = useAlert();
 
@@ -65,6 +66,15 @@ const UserManagement = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      try {
+        // Fetch current user profile
+        const profileRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
+          withCredentials: true
+        });
+        setCurrentUser(profileRes.data.user);
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+      }
       await Promise.all([fetchPendingUsers(), fetchAllUsers()]);
       setLoading(false);
     };
@@ -106,8 +116,21 @@ const UserManagement = () => {
   };
 
   const handleRoleChange = async (userId, roleId) => {
+    // Prevent changing own role
+    if (currentUser && userId === currentUser.id) {
+      showError(t('user_management.cannot_change_own_role') || 'You cannot change your own role');
+      return;
+    }
+
     // Find the role name
     const selectedRole = roles.find(r => r.id === roleId);
+    const targetUser = allUsers.find(u => u.id === userId);
+
+    // Prevent super admin from demoting themselves (extra check)
+    if (currentUser?.role?.name === 'SUPER_ADMIN' && targetUser?.role?.name === 'SUPER_ADMIN' && selectedRole?.name !== 'SUPER_ADMIN') {
+      showError(t('user_management.cannot_demote_super_admin') || 'Super Admin cannot demote themselves');
+      return;
+    }
 
     // If promoting to Super Admin, show confirmation dialog
     if (selectedRole?.name === 'SUPER_ADMIN') {
@@ -262,19 +285,26 @@ const UserManagement = () => {
       width: 180,
       sortable: false,
       exportable: false,
-      renderCell: (row) => (
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <Select
-            value={row.role?.id || ''}
-            onChange={(e) => handleRoleChange(row.id, e.target.value)}
-            disabled={actionLoading === row.id}
-          >
-            {roles.map((role) => (
-              <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      ),
+      renderCell: (row) => {
+        const isCurrentUser = currentUser && row.id === currentUser.id;
+        const isSuperAdmin = row.role?.name === 'SUPER_ADMIN';
+        const isDisabled = actionLoading === row.id || isCurrentUser || (isSuperAdmin && currentUser?.role?.name === 'SUPER_ADMIN');
+        
+        return (
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <Select
+              value={row.role?.id || ''}
+              onChange={(e) => handleRoleChange(row.id, e.target.value)}
+              disabled={isDisabled}
+              title={isCurrentUser ? (t('user_management.cannot_change_own_role') || 'Cannot change your own role') : ''}
+            >
+              {roles.map((role) => (
+                <MenuItem key={role.id} value={role.id}>{role.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        );
+      },
       valueGetter: (row) => row.role?.name || '-'
     },
     {
