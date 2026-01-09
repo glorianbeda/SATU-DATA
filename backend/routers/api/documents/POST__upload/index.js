@@ -46,6 +46,15 @@ const handler = async (req, res) => {
       },
     });
 
+    // Create DocumentHash record with original hash for cryptographic verification
+    await prisma.documentHash.create({
+      data: {
+        documentId: document.id,
+        originalHash: checksum, // Same as checksum for original upload
+        algorithm: "SHA256",
+      },
+    });
+
     res.status(201).json({
       message: "Document uploaded successfully",
       document,

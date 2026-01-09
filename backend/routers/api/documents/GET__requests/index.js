@@ -8,13 +8,22 @@ const handler = async (req, res) => {
     const userId = req.user.id;
 
     // Get requests where user is signer OR uploader
+    // Use distinct to prevent duplicates when user is both
     const requests = await prisma.signatureRequest.findMany({
       where: {
         OR: [{ signerId: userId }, { document: { uploaderId: userId } }],
       },
+      distinct: ["id"],
       include: {
         document: {
-          include: { uploader: { select: { name: true, email: true } } },
+          select: {
+            id: true,
+            title: true,
+            filePath: true,
+            deletedAt: true,
+            deletedById: true,
+            uploader: { select: { name: true, email: true } },
+          },
         },
         signer: { select: { name: true, email: true } },
       },

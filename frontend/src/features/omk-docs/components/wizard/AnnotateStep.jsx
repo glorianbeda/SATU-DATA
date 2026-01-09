@@ -130,7 +130,8 @@ const DraggableAnnotation = ({
       case ANNOTATION_TYPES.TEXT:
         return text || 'Teks';
       case ANNOTATION_TYPES.INITIAL:
-        return signerInitial || 'Paraf';
+        // Show signature if available, otherwise show initials
+        return signatureUrl ? null : (signerInitial || 'XX');
       default:
         return '';
     }
@@ -213,7 +214,7 @@ const DraggableAnnotation = ({
             className="bg-white rounded text-xs"
             inputProps={{ style: { fontSize: fontSize, padding: '2px 8px' } }}
           />
-        ) : type === ANNOTATION_TYPES.SIGNATURE && signatureUrl ? (
+        ) : (type === ANNOTATION_TYPES.SIGNATURE || type === ANNOTATION_TYPES.INITIAL) && signatureUrl ? (
           <img 
             src={signatureUrl} 
             alt="Signature" 
@@ -238,7 +239,7 @@ const DraggableAnnotation = ({
   );
 };
 
-const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, currentUser, signers }) => {
+const AnnotateStep = ({ draftFilePreviewUrl, annotations, onAnnotationsChange, mode, currentUser, signers }) => {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 0, height: 0 });
@@ -297,20 +298,31 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
     };
   }, []);
 
-  const fileUrl = document ? `${import.meta.env.VITE_API_URL}${document.filePath}` : null;
+  // Use the preview URL directly (from local blob)
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
   };
 
   const handlePageLoadSuccess = (page) => {
-    setPdfDimensions({ width: page.width, height: page.height });
+    // Use originalWidth/originalHeight to get actual PDF dimensions (not rendered)
+    // These are the dimensions we need for coordinate normalization
+    setPdfDimensions({ 
+      width: page.originalWidth || page.width, 
+      height: page.originalHeight || page.height 
+    });
   };
 
   const getRefDimensions = () => {
-    if (!pdfDimensions.width) return { width: 600, height: 800 };
-    const height = containerWidth * (pdfDimensions.height / pdfDimensions.width);
-    return { width: containerWidth, height };
+    // Return actual PDF dimensions for normalization (zoom-independent)
+    if (!pdfDimensions.width) return { width: 612, height: 792 }; // Standard PDF size
+    return { width: pdfDimensions.width, height: pdfDimensions.height };
+  };
+
+  // Get scale factor between container and PDF dimensions
+  const getScaleFactor = () => {
+    if (!pdfDimensions.width) return 1;
+    return containerWidth / pdfDimensions.width;
   };
 
   const handleCanvasClick = useCallback((e) => {
@@ -343,24 +355,30 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
 
     const defaults = getAnnotationDefaults(selectedTool);
     const { width: refWidth, height: refHeight } = getRefDimensions();
+    const scaleFactor = getScaleFactor();
+
+    // Convert screen position to PDF coordinates
+    const pdfX = x / scaleFactor;
+    const pdfY = y / scaleFactor;
 
     const newAnnotation = {
       id: `${selectedTool}-${Date.now()}`,
       type: selectedTool,
-      position: { x, y },
-      width: defaults.width,
-      height: defaults.height,
+      position: { x: pdfX, y: pdfY },
+      width: defaults.width / scaleFactor, // Store in PDF units
+      height: defaults.height / scaleFactor,
       refWidth,
       refHeight,
       page: pageNumber,
       text: selectedTool === ANNOTATION_TYPES.TEXT ? 'Teks...' : '',
+      fontSize: fontSize,
       signerId,
       signerName
     };
 
     onAnnotationsChange([...annotations, newAnnotation]);
     setSelectedTool(null);
-  }, [selectedTool, pageNumber, annotations, onAnnotationsChange, selectedSigner, isSelfMode, currentUser, containerWidth, pdfDimensions]);
+  }, [selectedTool, pageNumber, annotations, onAnnotationsChange, selectedSigner, isSelfMode, currentUser, containerWidth, pdfDimensions, fontSize]);
 
   const handlePositionChange = (id, position) => {
     const { width: refWidth, height: refHeight } = getRefDimensions();
@@ -493,8 +511,8 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
             overflowX: 'hidden'
           }}
         >
-          {fileUrl && (
-            <Document file={fileUrl} onLoadSuccess={onDocumentLoadSuccess}>
+          {draftFilePreviewUrl && (
+            <Document file={draftFilePreviewUrl} onLoadSuccess={onDocumentLoadSuccess}>
               <Box 
                 ref={containerRef}
                 sx={{ 
@@ -513,25 +531,37 @@ const AnnotateStep = ({ document, annotations, onAnnotationsChange, mode, curren
                 />
                 
                 {/* Render Annotations */}
-                {currentPageAnnotations.map(annotation => (
-                  <DraggableAnnotation
-                    key={annotation.id}
-                    id={annotation.id}
-                    type={annotation.type}
-                    position={annotation.position}
-                    width={annotation.width}
-                    height={annotation.height}
-                    text={annotation.text}
-                    signerName={annotation.signerName}
-                    signatureUrl={getSignatureUrl(annotation)}
-                    signerInitial={getInitials(annotation.signerName || currentUser?.name)}
-                    fontSize={fontSize}
-                    onPositionChange={handlePositionChange}
-                    onResize={handleResize}
-                    onDelete={handleDelete}
-                    onTextChange={handleTextChange}
-                  />
-                ))}
+                {currentPageAnnotations.map(annotation => {
+                  const scaleFactor = getScaleFactor();
+                  return (
+                    <DraggableAnnotation
+                      key={annotation.id}
+                      id={annotation.id}
+                      type={annotation.type}
+                      position={{
+                        x: annotation.position.x * scaleFactor,
+                        y: annotation.position.y * scaleFactor
+                      }}
+                      width={annotation.width * scaleFactor}
+                      height={annotation.height * scaleFactor}
+                      text={annotation.text}
+                      signerName={annotation.signerName}
+                      signatureUrl={getSignatureUrl(annotation)}
+                      signerInitial={getInitials(annotation.signerName || currentUser?.name)}
+                      fontSize={fontSize}
+                      onPositionChange={(id, pos) => handlePositionChange(id, {
+                        x: pos.x / scaleFactor,
+                        y: pos.y / scaleFactor
+                      })}
+                      onResize={(id, size) => handleResize(id, {
+                        width: size.width / scaleFactor,
+                        height: size.height / scaleFactor
+                      })}
+                      onDelete={handleDelete}
+                      onTextChange={handleTextChange}
+                    />
+                  );
+                })}
               </Box>
             </Document>
           )}

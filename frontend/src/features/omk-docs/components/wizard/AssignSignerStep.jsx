@@ -3,7 +3,7 @@ import { Box, Typography, Paper, Select, MenuItem, FormControl, InputLabel, Chip
 import { useTranslation } from 'react-i18next';
 import PersonIcon from '@mui/icons-material/Person';
 import DrawIcon from '@mui/icons-material/Draw';
-import axios from 'axios';
+import api from '~/utils/api';
 
 const ANNOTATION_TYPES = {
   SIGNATURE: 'signature',
@@ -26,10 +26,7 @@ const AssignSignerStep = ({ annotations, signers, onSignersChange }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/api/users');
         setUsers(response.data.users || []);
       } catch (err) {
         console.error("Failed to fetch users", err);

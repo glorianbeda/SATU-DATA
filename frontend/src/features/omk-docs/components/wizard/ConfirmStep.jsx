@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Button, Divider, CircularProgress, Alert, Chip, Avatar } from '@mui/material';
+import { Box, Typography, Paper, Button, Divider, CircularProgress, Alert, Chip, Avatar, LinearProgress } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DrawIcon from '@mui/icons-material/Draw';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -8,7 +8,7 @@ import GestureIcon from '@mui/icons-material/Gesture';
 import PersonIcon from '@mui/icons-material/Person';
 import SendIcon from '@mui/icons-material/Send';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import axios from 'axios';
+import api from '~/utils/api';
 
 const ANNOTATION_TYPES = {
   SIGNATURE: 'signature',
@@ -17,12 +17,14 @@ const ANNOTATION_TYPES = {
   INITIAL: 'initial'
 };
 
-const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
+const ConfirmStep = ({ wizardData, onSubmit, onBack, currentUser }) => {
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState(''); // 'uploading', 'signing', ''
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
-  const { mode, document, annotations } = wizardData;
+  const { mode, draftFile, title, annotations } = wizardData;
   const isSelfMode = mode === 'self';
 
   // Group annotations by signer
@@ -60,21 +62,47 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
   };
 
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (submitting) return;
+    
     setSubmitting(true);
     setError(null);
+    setUploadProgress(0);
+    setUploadStatus('uploading');
 
     try {
-      const token = localStorage.getItem('token');
-      
+      // Step 1: Upload the file to server
+      const formData = new FormData();
+      formData.append('document', draftFile);
+      formData.append('title', title || draftFile.name);
+
+      const uploadResponse = await api.post(
+        '/api/documents/upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          onUploadProgress: (progressEvent) => {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
+          }
+        }
+      );
+
+      const documentId = uploadResponse.data.document.id;
+      setUploadStatus('signing');
+
+      // Step 2: Create signature requests
       if (isSelfMode) {
         // Self-sign mode: Create request then immediately sign
         for (const annotation of annotations) {
           if (annotation.type) {
             // Create signature request
-            const requestRes = await axios.post(
-              `${import.meta.env.VITE_API_URL}/api/documents/request-sign`,
+            const requestRes = await api.post(
+              '/api/documents/request-sign',
               {
-                documentId: document.id,
+                documentId: documentId,
                 signerId: currentUser.id,
                 x: annotation.position.x / (annotation.refWidth || 600),
                 y: annotation.position.y / (annotation.refHeight || 800),
@@ -82,16 +110,15 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
                 height: annotation.height / (annotation.refHeight || 800),
                 type: annotation.type,
                 text: annotation.text,
+                fontSize: annotation.fontSize,
                 page: annotation.page
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
+              }
             );
 
             // Immediately sign it
-            await axios.post(
-              `${import.meta.env.VITE_API_URL}/api/documents/sign`,
-              { requestId: requestRes.data.request.id },
-              { headers: { Authorization: `Bearer ${token}` } }
+            await api.post(
+              '/api/documents/sign',
+              { requestId: requestRes.data.request.id }
             );
           }
         }
@@ -99,10 +126,10 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
         // Request mode: Create signature requests for each signer's annotations
         for (const annotation of annotations) {
           if (annotation.type && annotation.signerId) {
-            await axios.post(
-              `${import.meta.env.VITE_API_URL}/api/documents/request-sign`,
+            await api.post(
+              '/api/documents/request-sign',
               {
-                documentId: document.id,
+                documentId: documentId,
                 signerId: annotation.signerId,
                 x: annotation.position.x / (annotation.refWidth || 600),
                 y: annotation.position.y / (annotation.refHeight || 800),
@@ -110,21 +137,23 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
                 height: annotation.height / (annotation.refHeight || 800),
                 type: annotation.type,
                 text: annotation.text,
+                fontSize: annotation.fontSize,
                 page: annotation.page
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
+              }
             );
           }
         }
       }
 
       setSuccess(true);
+      setUploadStatus('');
       if (onSubmit) {
         setTimeout(() => onSubmit(), 2000);
       }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Gagal memproses permintaan');
+      setUploadStatus('');
     } finally {
       setSubmitting(false);
     }
@@ -204,10 +233,10 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
           </Box>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {document?.title || 'Untitled Document'}
+              {title || draftFile?.name || 'Untitled Document'}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              ID: {document?.id}
+              Ukuran: {draftFile ? `${(draftFile.size / 1024 / 1024).toFixed(2)} MB` : '-'}
             </Typography>
           </Box>
         </Box>
@@ -281,14 +310,41 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
 
       <Divider sx={{ my: 3 }} />
 
+      {/* Upload Progress */}
+      {submitting && uploadStatus && (
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <CircularProgress size={16} />
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {uploadStatus === 'uploading' 
+                ? 'Mengupload dokumen...' 
+                : 'Memproses permintaan tanda tangan...'}
+            </Typography>
+          </Box>
+          {uploadStatus === 'uploading' && (
+            <LinearProgress variant="determinate" value={uploadProgress} sx={{ borderRadius: 2, height: 6 }} />
+          )}
+        </Box>
+      )}
+
       {error && (
         <Alert severity="error" sx={{ borderRadius: 3, mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Submit Button */}
-      <Box className="flex justify-center">
+      {/* Navigation Buttons */}
+      <Box className="flex justify-between">
+        {onBack && (
+          <Button
+            variant="outlined"
+            onClick={onBack}
+            disabled={submitting}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
+            Kembali
+          </Button>
+        )}
         <Button
           variant="contained"
           size="large"
@@ -299,6 +355,7 @@ const ConfirmStep = ({ wizardData, onSubmit, currentUser }) => {
             px: 4, 
             py: 1.5, 
             borderRadius: 3,
+            ml: onBack ? 0 : 'auto',
             background: isSelfMode 
               ? 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)'
               : 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',

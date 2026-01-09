@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Autocomplete, Checkbox, FormControlLabel, Chip, Avatar, Paper, IconButton } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
+import api from '~/utils/api';
 
 const SignerSetupPanel = ({ selectedSigners = [], onSignersChange, currentUser }) => {
   const [users, setUsers] = useState([]);
@@ -13,9 +13,7 @@ const SignerSetupPanel = ({ selectedSigners = [], onSignersChange, currentUser }
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get('/api/users', {
           params: { exclude_self: true }
         });
         setUsers(response.data.users || []);

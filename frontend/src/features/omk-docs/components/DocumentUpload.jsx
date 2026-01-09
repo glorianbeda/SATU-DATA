@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '~/utils/api';
 import { Button, Box, Typography, CircularProgress, Alert, LinearProgress } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
@@ -31,11 +31,9 @@ const DocumentUpload = ({ onUploadSuccess }) => {
     formData.append('document', file);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/documents/upload`, formData, {
+      const response = await api.post('/api/documents/upload', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'multipart/form-data'
         },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

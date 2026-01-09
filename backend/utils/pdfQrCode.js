@@ -1,77 +1,49 @@
-const { PDFDocument, rgb } = require("pdf-lib");
-const QRCode = require("qrcode");
+const { PDFDocument } = require("pdf-lib");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
 /**
- * Generate QR code as PNG buffer
- * @param {string} data - Data to encode in QR code
- * @returns {Promise<Buffer>} PNG image buffer
+ * Generate short verification code from checksum
+ * @param {string} checksum - Full checksum
+ * @returns {string} Short code like "ABC1-2DEF"
  */
-async function generateQRCode(data) {
-  const buffer = await QRCode.toBuffer(data, {
-    errorCorrectionLevel: "H",
-    type: "png",
-    width: 120,
-    margin: 1,
-    color: {
-      dark: "#000000",
-      light: "#ffffff",
-    },
-  });
-  return buffer;
+function generateVerificationCode(checksum) {
+  const clean = checksum.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return `${clean.slice(0, 4)}-${clean.slice(4, 8)}`;
 }
 
 /**
- * Embed QR code into the last page of a PDF
+ * Embed verification metadata in PDF without visible changes
+ * Uses PDF document properties (Title, Subject, Keywords) to store verification info
  * @param {string} pdfPath - Path to the original PDF
- * @param {string} qrData - Data for the QR code
- * @param {string} label - Label text below QR code
- * @returns {Promise<{outputPath: string, checksum: string}>} Path to modified PDF and its checksum
+ * @param {string} verificationUrl - URL for verification
+ * @param {string} verificationCode - Short verification code
+ * @returns {Promise<{outputPath: string, checksum: string, verificationCode: string}>}
  */
-async function embedQRCodeInPDF(pdfPath, qrData, label = "Scan to verify") {
+async function embedVerificationMetadata(
+  pdfPath,
+  verificationUrl,
+  verificationCode = null
+) {
   // Read the original PDF
   const pdfBytes = fs.readFileSync(pdfPath);
   const pdfDoc = await PDFDocument.load(pdfBytes);
 
-  // Get last page
-  const pages = pdfDoc.getPages();
-  const lastPage = pages[pages.length - 1];
-  const { width, height } = lastPage.getSize();
+  // Get original title or use filename
+  const originalTitle = pdfDoc.getTitle() || path.basename(pdfPath, ".pdf");
 
-  // Generate QR code
-  const qrBuffer = await generateQRCode(qrData);
-  const qrImage = await pdfDoc.embedPng(qrBuffer);
-
-  // QR code dimensions and position (bottom-right corner)
-  const qrSize = 60;
-  const margin = 30;
-  const qrX = width - qrSize - margin;
-  const qrY = margin;
-
-  // Draw QR code
-  lastPage.drawImage(qrImage, {
-    x: qrX,
-    y: qrY,
-    width: qrSize,
-    height: qrSize,
-  });
-
-  // Draw label below QR code
-  const font = await pdfDoc.embedFont("Helvetica");
-  const fontSize = 6;
-  const textWidth = font.widthOfTextAtSize(label, fontSize);
-  const textX = qrX + (qrSize - textWidth) / 2;
-  const textY = qrY - 10;
-
-  lastPage.drawText(label, {
-    x: textX,
-    y: textY,
-    size: fontSize,
-    font: font,
-    color: rgb(0.3, 0.3, 0.3),
-  });
+  // Set PDF metadata with verification info (invisible to document content)
+  pdfDoc.setSubject(
+    `Verified Document | Code: ${verificationCode || "PENDING"}`
+  );
+  pdfDoc.setKeywords([
+    "satu-data-verified",
+    `code:${verificationCode || ""}`,
+    `url:${verificationUrl}`,
+  ]);
+  pdfDoc.setProducer("Satu Data+ Document Verification System");
+  pdfDoc.setCreator("OMK-Docs");
 
   // Save modified PDF
   const modifiedPdfBytes = await pdfDoc.save();
@@ -96,7 +68,16 @@ async function embedQRCodeInPDF(pdfPath, qrData, label = "Scan to verify") {
     outputFilename,
     relativePath: `/uploads/documents/${outputFilename}`,
     checksum,
+    verificationCode: verificationCode || generateVerificationCode(checksum),
   };
+}
+
+/**
+ * Legacy function - kept for backward compatibility but now just calls embedVerificationMetadata
+ * @deprecated Use embedVerificationMetadata instead
+ */
+async function embedQRCodeInPDF(pdfPath, qrData, verificationCode = null) {
+  return embedVerificationMetadata(pdfPath, qrData, verificationCode);
 }
 
 /**
@@ -116,7 +97,8 @@ async function areAllSignaturesComplete(prisma, documentId) {
 }
 
 module.exports = {
-  generateQRCode,
   embedQRCodeInPDF,
+  embedVerificationMetadata,
   areAllSignaturesComplete,
+  generateVerificationCode,
 };

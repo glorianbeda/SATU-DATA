@@ -7,6 +7,7 @@ const authMiddleware = require("@/middleware/auth");
 const {
   embedQRCodeInPDF,
   areAllSignaturesComplete,
+  generateVerificationCode,
 } = require("@/utils/pdfQrCode");
 
 const prisma = new PrismaClient();
@@ -97,9 +98,13 @@ const handler = async (req, res) => {
 
     if (request.type === "text" || request.type === "date") {
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      let fontSize = 12;
 
-      if (request.height && request.height <= 1) {
+      // Use stored fontSize if available, otherwise calculate based on PDF scale
+      let fontSize = 12;
+      if (request.fontSize) {
+        // Convert from screen pixels to PDF points (assuming 72 DPI PDF)
+        fontSize = request.fontSize * 0.75; // Approximate conversion
+      } else if (request.height && request.height <= 1) {
         fontSize = request.height * height * 0.6;
       }
 
@@ -112,9 +117,20 @@ const handler = async (req, res) => {
             })
           : request.text || "Signed";
 
+      // Calculate text width for centering
+      const textWidth = font.widthOfTextAtSize(text, fontSize);
+      const boxWidth = request.width ? request.width * width : textWidth + 10;
+      const boxHeight = request.height
+        ? request.height * height
+        : fontSize + 10;
+
+      // Center text within box (preview uses CSS flex center)
+      const centeredX = drawX + (boxWidth - textWidth) / 2;
+      const centeredY = drawY - (boxHeight + fontSize) / 2;
+
       page.drawText(text, {
-        x: drawX,
-        y: drawY - fontSize,
+        x: centeredX,
+        y: centeredY,
         size: fontSize,
         font: font,
         color: rgb(0, 0, 0),
@@ -136,11 +152,20 @@ const handler = async (req, res) => {
       const scaleFactor = targetWidth / signImage.width;
       const finalDims = signImage.scale(scaleFactor);
 
-      drawY = drawY - finalDims.height;
+      // Preview anchor is top-left, PDF anchor is bottom-left
+      // Calculate box dimensions
+      const boxWidth = request.width ? request.width * width : finalDims.width;
+      const boxHeight = request.height
+        ? request.height * height
+        : finalDims.height;
+
+      // Center signature within box (preview uses CSS flex center)
+      const centeredX = drawX + (boxWidth - finalDims.width) / 2;
+      const centeredY = drawY - (boxHeight + finalDims.height) / 2;
 
       page.drawImage(signImage, {
-        x: drawX,
-        y: drawY,
+        x: centeredX,
+        y: centeredY,
         width: finalDims.width,
         height: finalDims.height,
       });
@@ -169,15 +194,16 @@ const handler = async (req, res) => {
     if (allComplete) {
       // Embed QR code for validation
       const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-      const validationUrl = `${baseUrl}/docs/validate?id=${
-        request.documentId
-      }&checksum=${request.document.checksum.substring(0, 8)}`;
+      const verificationCode = generateVerificationCode(
+        request.document.checksum
+      );
+      const validationUrl = `${baseUrl}/docs/validate?code=${verificationCode}`;
 
       try {
         const qrResult = await embedQRCodeInPDF(
           pdfPath,
           validationUrl,
-          "Scan to verify authenticity"
+          verificationCode
         );
 
         // Update document with new checksum and file path
@@ -189,7 +215,19 @@ const handler = async (req, res) => {
           },
         });
 
-        console.log(`QR code embedded. New checksum: ${qrResult.checksum}`);
+        // Update DocumentHash with signedHash and HMAC signature
+        const { createSignature } = require("@/utils/documentCrypto");
+        const signatureData = createSignature(qrResult.checksum);
+
+        await prisma.documentHash.update({
+          where: { documentId: request.documentId },
+          data: {
+            signedHash: qrResult.checksum,
+            signatureData: signatureData,
+          },
+        });
+
+        console.log(`QR code embedded. Verification code: ${verificationCode}`);
       } catch (qrError) {
         console.error("Failed to embed QR code:", qrError);
         // Don't fail the signing, just log the error

@@ -9,7 +9,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SendIcon from '@mui/icons-material/Send';
 import DrawIcon from '@mui/icons-material/Draw';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
-import axios from 'axios';
+import api from '~/utils/api';
 
 // Step Components
 import ModeSelectionStep from './wizard/ModeSelectionStep';
@@ -21,22 +21,40 @@ const SignatureRequestWizard = ({ onComplete, onCancel }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [draftFilePreviewUrl, setDraftFilePreviewUrl] = useState(null);
   const [wizardData, setWizardData] = useState({
     mode: null, // 'self' or 'request'
-    document: null,
+    draftFile: null, // File object stored locally until submit
     annotations: [],
     title: '',
     signers: []
   });
 
+  // Create/cleanup preview URL when draftFile changes
+  useEffect(() => {
+    if (wizardData.draftFile) {
+      const url = URL.createObjectURL(wizardData.draftFile);
+      setDraftFilePreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setDraftFilePreviewUrl(null);
+    }
+  }, [wizardData.draftFile]);
+
+  // Cleanup on wizard cancel/unmount
+  useEffect(() => {
+    return () => {
+      if (draftFilePreviewUrl) {
+        URL.revokeObjectURL(draftFilePreviewUrl);
+      }
+    };
+  }, []);
+
   // Fetch current user for self-sign mode
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/api/profile');
         setCurrentUser(response.data.user);
         console.log('User loaded:', response.data);
       } catch (err) {
@@ -108,9 +126,9 @@ const SignatureRequestWizard = ({ onComplete, onCancel }) => {
     switch (stepIndex) {
       case 1: 
         if (wizardData.mode === 'request') {
-          return wizardData.document !== null && wizardData.signers.length > 0;
+          return wizardData.draftFile !== null && wizardData.signers.length > 0;
         }
-        return wizardData.document !== null;
+        return wizardData.draftFile !== null;
       case 2: return wizardData.annotations.length > 0;
       case 3: return true;
       default: return false;
@@ -126,8 +144,8 @@ const SignatureRequestWizard = ({ onComplete, onCancel }) => {
       case 1:
         return (
           <DocumentUploadStep 
-            document={wizardData.document}
-            onDocumentChange={(doc) => updateWizardData('document', doc)}
+            draftFile={wizardData.draftFile}
+            onDraftFileChange={(file) => updateWizardData('draftFile', file)}
             onTitleChange={(title) => updateWizardData('title', title)}
             mode={wizardData.mode}
             selectedSigners={wizardData.signers}
@@ -138,7 +156,7 @@ const SignatureRequestWizard = ({ onComplete, onCancel }) => {
       case 2:
         return (
           <AnnotateStep 
-            document={wizardData.document}
+            draftFilePreviewUrl={draftFilePreviewUrl}
             annotations={wizardData.annotations}
             onAnnotationsChange={(annotations) => updateWizardData('annotations', annotations)}
             mode={wizardData.mode}
@@ -149,10 +167,11 @@ const SignatureRequestWizard = ({ onComplete, onCancel }) => {
       case 3:
         return (
           <ConfirmStep 
-            wizardData={wizardData}
-            onSubmit={handleSubmit}
-            currentUser={currentUser}
-          />
+          wizardData={wizardData}
+          onSubmit={handleSubmit}
+          onBack={handleBack}
+          currentUser={currentUser}
+        />
         );
       default:
         return null;
@@ -250,8 +269,8 @@ const SignatureRequestWizard = ({ onComplete, onCancel }) => {
         {renderStepContent()}
       </Paper>
 
-      {/* Navigation Buttons - Hidden on mode selection */}
-      {activeStep > 0 && (
+      {/* Navigation Buttons - Hidden on mode selection and final step (ConfirmStep has its own button) */}
+      {activeStep > 0 && activeStep < steps.length - 1 && (
         <Box className="flex justify-between mt-4 mb-4">
           <Button
             variant="outlined"

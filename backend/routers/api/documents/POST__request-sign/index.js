@@ -5,8 +5,18 @@ const prisma = new PrismaClient();
 
 const handler = async (req, res) => {
   try {
-    const { documentId, signerId, x, y, page, type, text, width, height } =
-      req.body;
+    const {
+      documentId,
+      signerId,
+      x,
+      y,
+      page,
+      type,
+      text,
+      width,
+      height,
+      fontSize,
+    } = req.body;
 
     if (
       !documentId ||
@@ -49,6 +59,7 @@ const handler = async (req, res) => {
         text: text,
         width: width,
         height: height,
+        fontSize: fontSize,
       },
     });
 

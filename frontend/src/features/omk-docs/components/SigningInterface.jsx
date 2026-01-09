@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Document, Page } from 'react-pdf';
-import axios from 'axios';
+import api from '~/utils/api';
 import { Box, Button, Typography, CircularProgress, Alert } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -19,10 +19,7 @@ const SigningInterface = ({ request, onClose }) => {
     const fetchOtherRequests = async () => {
         if (!request || !request.documentId) return;
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/documents/requests`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await api.get('/api/documents/requests');
             // Filter for same document, current user, pending, and NOT the current request
             const others = response.data.requests.filter(r => 
                 r.documentId === request.documentId && 
@@ -40,11 +37,8 @@ const SigningInterface = ({ request, onClose }) => {
   const handleSign = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/documents/sign`, {
+      await api.post('/api/documents/sign', {
         requestId: request.id
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: 'success', text: 'Document signed successfully!' });
       setTimeout(() => onClose && onClose(true), 2000);
@@ -59,14 +53,11 @@ const SigningInterface = ({ request, onClose }) => {
   const handleSignAll = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const allRequestIds = [request.id, ...otherPendingRequests.map(r => r.id)];
       
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/documents/sign-batch`, {
+      await api.post('/api/documents/sign-batch', {
         documentId: request.documentId,
         requestIds: allRequestIds
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       
       setMessage({ type: 'success', text: 'All requests signed successfully!' });
@@ -91,11 +82,8 @@ const SigningInterface = ({ request, onClose }) => {
     if (!isConfirmed) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/documents/reject`, {
+      await api.post('/api/documents/reject', {
         requestId: request.id
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: 'info', text: 'Request rejected.' });
       setTimeout(() => onClose && onClose(true), 2000);

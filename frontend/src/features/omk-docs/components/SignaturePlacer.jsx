@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // Force rebuild
 import { Document, Page, pdfjs } from 'react-pdf';
 import Draggable from 'react-draggable';
-import axios from 'axios';
+import api from '~/utils/api';
 import { Box, Button, Typography, Select, MenuItem, FormControl, InputLabel, CircularProgress, Alert } from '@mui/material';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -29,16 +29,13 @@ const SignaturePlacer = ({ documentId, fileUrl, onClose }) => {
     // Fetch users for dropdown
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem('token');
         // Assuming we have an endpoint to list users. If not, we might need one.
         // For now, let's assume /api/users exists or use a mock/search.
         // Since I didn't create /api/users, I'll assume we can search or just list all.
         // I'll create a quick endpoint or just assume it exists for now (Task 2.3 in backend refactor mentioned updating services, but didn't explicitly add list users).
         // I'll assume /api/users is available or I'll add it later.
         // For now, I'll just put a placeholder or try to fetch.
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/api/users');
         setUsers(response.data.users || []);
       } catch (err) {
         console.error("Failed to fetch users", err);
@@ -72,8 +69,6 @@ const SignaturePlacer = ({ documentId, fileUrl, onClose }) => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      
       // Normalize coordinates (0-1)
       // Note: Draggable position is relative to the container (Page).
       // We need to ensure the container size matches the PDF page size rendered.
@@ -82,14 +77,12 @@ const SignaturePlacer = ({ documentId, fileUrl, onClose }) => {
       const normalizedX = boxPosition.x / pdfDimensions.width;
       const normalizedY = boxPosition.y / pdfDimensions.height;
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/documents/request-sign`, {
+      await api.post('/api/documents/request-sign', {
         documentId,
         signerId: selectedUser,
         x: normalizedX,
         y: normalizedY,
         page: pageNumber
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       setMessage({ type: 'success', text: 'Request sent successfully!' });
