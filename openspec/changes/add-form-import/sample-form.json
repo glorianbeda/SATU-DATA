@@ -1,0 +1,36 @@
+{
+  "title": "Employee Satisfaction Survey",
+  "description": "A survey to gauge employee satisfaction and engagement.",
+  "slug": "employee-satisfaction-2025",
+  "schema": [
+    {
+      "id": "field-1736437200000",
+      "type": "text",
+      "label": "Full Name",
+      "required": true,
+      "options": []
+    },
+    {
+      "id": "field-1736437200001",
+      "type": "select",
+      "label": "Department",
+      "required": true,
+      "options": ["Engineering", "HR", "Sales", "Marketing"]
+    },
+    {
+      "id": "field-1736437200002",
+      "type": "number",
+      "label": "Years of Experience",
+      "required": false,
+      "options": []
+    },
+    {
+      "id": "field-1736437200003",
+      "type": "textarea",
+      "label": "Feedback / Suggestions",
+      "required": false,
+      "options": []
+    }
+  ],
+  "settings": {}
+}
