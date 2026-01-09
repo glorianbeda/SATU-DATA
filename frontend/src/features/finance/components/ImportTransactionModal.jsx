@@ -86,15 +86,11 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
         }
 
         const headers = jsonData[0];
-        // Create case-insensitive header mapping
         const headerMap = {};
         headers.forEach((h, index) => {
-          if (h) {
-            headerMap[h.toString().toLowerCase()] = index;
-          }
+          if (h) headerMap[h.toString().toLowerCase()] = index;
         });
 
-        // Check for missing columns (case-insensitive)
         const missingColumns = requiredColumns.filter(col => 
           !Object.keys(headerMap).includes(col.toLowerCase())
         );
@@ -105,15 +101,79 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
           return;
         }
 
-        // Parse data using case-insensitive header matching
         const parsedData = jsonData.slice(1).map((row, index) => {
+          const rawDate = row[headerMap['date']];
+          const rawAmount = row[headerMap['amount']];
+          const rawCategory = row[headerMap['category']];
+          const rawDesc = row[headerMap['description']];
+
+          const rowErrors = {};
+          let isValid = true;
+
+          // Date Validation
+          let dateVal = rawDate;
+          if (!rawDate) {
+             rowErrors.Date = 'Date is required';
+             isValid = false;
+          } else {
+             // Handle Excel serial date
+             if (typeof rawDate === 'number') {
+                const dateObj = XLSX.SSF.parse_date_code(rawDate);
+                // Format YYYY-MM-DD
+                const y = dateObj.y;
+                const m = dateObj.m < 10 ? `0${dateObj.m}` : dateObj.m;
+                const d = dateObj.d < 10 ? `0${dateObj.d}` : dateObj.d;
+                dateVal = `${y}-${m}-${d}`;
+             }
+             // Simple string check
+             else if (typeof rawDate === 'string') {
+                 // Try to parse?
+                 if (isNaN(Date.parse(rawDate))) {
+                     rowErrors.Date = 'Invalid date format';
+                     isValid = false;
+                 } else {
+                     dateVal = new Date(rawDate).toISOString().split('T')[0];
+                 }
+             }
+          }
+
+          // Amount Validation
+          let amountVal = rawAmount;
+          if (rawAmount === undefined || rawAmount === null || rawAmount === '') {
+             rowErrors.Amount = 'Amount is required';
+             isValid = false;
+          } else {
+             const num = parseFloat(rawAmount.toString().replace(/[^0-9.-]/g, ''));
+             if (isNaN(num)) {
+                 rowErrors.Amount = 'Invalid amount';
+                 isValid = false;
+             } else {
+                 amountVal = num;
+             }
+          }
+
+          // Category Validation
+          if (!rawCategory || !rawCategory.toString().trim()) {
+              rowErrors.Category = 'Category is required';
+              isValid = false;
+          }
+
+          // Description Validation
+          if (!rawDesc || !rawDesc.toString().trim()) {
+              rowErrors.Description = 'Description is required';
+              isValid = false;
+          }
+
           return {
-            Date: row[headerMap['date']],
-            Amount: row[headerMap['amount']],
-            Category: row[headerMap['category']],
-            Description: row[headerMap['description']]
+            Date: dateVal,
+            Amount: amountVal,
+            Category: rawCategory,
+            Description: rawDesc,
+            _isValid: isValid,
+            _errors: rowErrors,
+            _row: index + 2
           };
-        }).filter(row => row.Date && row.Amount); // Basic filter for empty rows
+        }).filter(row => row.Date || row.Amount || row.Category || row.Description); // Filter completely empty rows
 
         setData(parsedData);
       } catch (error) {
@@ -127,8 +187,11 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
   };
 
   const handleSave = () => {
-    onSave(data);
-    onClose();
+    const validRows = data.filter(r => r._isValid);
+    if (validRows.length > 0) {
+        onSave(validRows);
+        onClose();
+    }
   };
 
   return (
@@ -209,7 +272,7 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
             )}
           </Box>
 
-          {/* Errors */}
+          {/* Errors from Parsing */}
           {errors.length > 0 && (
             <Alert severity="error" icon={<ErrorIcon />}>
               {errors.map((err, i) => (
@@ -217,35 +280,83 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
               ))}
             </Alert>
           )}
+          
+          {/* Validation Warning */}
+          {data.length > 0 && data.some(r => !r._isValid) && (
+             <Alert severity="warning">
+                {data.filter(r => !r._isValid).length} invalid rows will be skipped.
+             </Alert>
+          )}
 
           {/* Preview Table */}
           {data.length > 0 && (
             <Box>
-              <Typography variant="subtitle2" className="mb-2 text-gray-600 dark:text-gray-400">
-                Preview ({data.length} records)
-              </Typography>
+              <Box className="flex justify-between items-center mb-2">
+                  <Typography variant="subtitle2" className="text-gray-600 dark:text-gray-400">
+                    Preview ({data.length} records)
+                  </Typography>
+                  <Box className="flex gap-3 text-xs">
+                     <span className="text-green-600 font-medium">
+                        {data.filter(r => r._isValid).length} Valid
+                     </span>
+                     <span className="text-red-500 font-medium">
+                        {data.filter(r => !r._isValid).length} Invalid
+                     </span>
+                  </Box>
+              </Box>
+              
               <TableContainer component={Paper} className="max-h-60 overflow-auto shadow-none border border-gray-200 dark:border-gray-700">
                 <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
+                      <TableCell className="bg-gray-50 dark:bg-gray-800 font-semibold w-12 text-center">#</TableCell>
                       {requiredColumns.map(col => (
                         <TableCell key={col} className="bg-gray-50 dark:bg-gray-800 font-semibold">{col}</TableCell>
                       ))}
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.slice(0, 5).map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{row.Date}</TableCell>
-                        <TableCell>{row.Amount}</TableCell>
-                        <TableCell>{row.Category}</TableCell>
-                        <TableCell>{row.Description}</TableCell>
+                    {data.slice(0, 100).map((row, i) => (
+                      <TableRow key={i} className={!row._isValid ? "bg-red-50 dark:bg-red-900/20" : ""}>
+                         <TableCell className="text-center text-xs text-gray-400">{row._row}</TableCell>
+                        <TableCell className="relative group">
+                            {row.Date}
+                            {row._errors?.Date && (
+                                <div className="absolute hidden group-hover:block bottom-full left-0 bg-red-600 text-white text-xs p-1 rounded z-10 whitespace-nowrap mb-1">
+                                    {row._errors.Date}
+                                </div>
+                            )}
+                        </TableCell>
+                        <TableCell className="relative group">
+                            {row.Amount}
+                            {row._errors?.Amount && (
+                                <div className="absolute hidden group-hover:block bottom-full left-0 bg-red-600 text-white text-xs p-1 rounded z-10 whitespace-nowrap mb-1">
+                                    {row._errors.Amount}
+                                </div>
+                            )}
+                        </TableCell>
+                        <TableCell className="relative group">
+                            {row.Category}
+                            {row._errors?.Category && (
+                                <div className="absolute hidden group-hover:block bottom-full left-0 bg-red-600 text-white text-xs p-1 rounded z-10 whitespace-nowrap mb-1">
+                                    {row._errors.Category}
+                                </div>
+                            )}
+                        </TableCell>
+                        <TableCell className="relative group">
+                            {row.Description}
+                            {row._errors?.Description && (
+                                <div className="absolute hidden group-hover:block bottom-full left-0 bg-red-600 text-white text-xs p-1 rounded z-10 whitespace-nowrap mb-1">
+                                    {row._errors.Description}
+                                </div>
+                            )}
+                        </TableCell>
                       </TableRow>
                     ))}
-                    {data.length > 5 && (
+                    {data.length > 100 && (
                       <TableRow>
-                        <TableCell colSpan={4} align="center" className="text-gray-500">
-                          ... and {data.length - 5} more
+                        <TableCell colSpan={5} align="center" className="text-gray-500">
+                          ... and {data.length - 100} more
                         </TableCell>
                       </TableRow>
                     )}
@@ -267,11 +378,11 @@ const ImportTransactionModal = ({ open, onClose, onSave, type }) => {
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={data.length === 0 || errors.length > 0}
+          disabled={data.filter(r => r._isValid).length === 0}
           className={`px-6 py-2 rounded-lg shadow-lg shadow-${themeColor}-500/30 bg-gradient-to-r ${isIncome ? 'from-emerald-500 to-teal-600' : 'from-rose-500 to-red-600'} hover:shadow-xl transition-all`}
           startIcon={<CheckIcon />}
         >
-          {t('common.import', 'Import')}
+          {t('common.import', 'Import')} ({data.filter(r => r._isValid).length})
         </Button>
       </DialogActions>
     </Dialog>
