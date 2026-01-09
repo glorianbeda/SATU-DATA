@@ -80,7 +80,7 @@ const Header = ({ title, toggleSidebar, user }) => {
   const currentLang = i18n.language === 'id' ? '🇮🇩' : '🇬🇧';
 
   return (
-    <div className="flex justify-between items-start md:items-center mb-4 md:mb-8">
+    <div className="flex justify-between items-start md:items-center">
       <div className="flex items-start md:items-center gap-3 md:gap-4">
         <IconButton
           onClick={toggleSidebar}

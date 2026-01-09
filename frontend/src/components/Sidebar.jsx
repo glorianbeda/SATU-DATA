@@ -1,97 +1,83 @@
-import React, { useState, useMemo } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Dashboard as DashboardIcon,
-  Description as DocsIcon,
-  AccountBalanceWallet as WalletIcon,
-  AttachMoney as MoneyIcon,
-  WhatsApp as WhatsAppIcon,
-  PictureAsPdf as PdfIcon,
-  Edit as EditIcon,
-  Traffic as SignIcon,
   ExpandLess,
   ExpandMore,
-  TrendingUp,
-  TrendingDown,
   Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
-  People as PeopleIcon,
-  GridView as GridViewIcon
 } from '@mui/icons-material';
 import { 
   Collapse, 
-  List, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
   IconButton, 
   Tooltip, 
   Menu, 
-  MenuItem
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Popover,
+  MenuList,
 } from '@mui/material';
 
-import { hasPermission, ROLES } from '~/config/roles';
+import { hasPermission } from '~/config/roles';
+import { navigationConfig } from '~/config/navigation';
 
 const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const [openFinance, setOpenFinance] = useState(true);
+  const navigate = useNavigate();
+  
+  // Track open state for collapsible menus
+  const [openMenus, setOpenMenus] = useState({
+    docs: false,
+    finance: true,
+    productivity: false,
+    utilities: false,
+  });
+  
+  // Floating menu anchors (coordinates) for collapsed mode
+  const [menuPositions, setMenuPositions] = useState({});
 
-  // Floating menu states for collapsed mode
-  const [anchorElDocs, setAnchorElDocs] = useState(null);
-  const [anchorElFinance, setAnchorElFinance] = useState(null);
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-  const isActive = (path) => location.pathname === path;
+  const toggleMenu = (menuId) => {
+    setOpenMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
+  };
+  
+  const openFloatingMenu = (menuId, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenuPositions(prev => ({ 
+      ...prev, 
+      [menuId]: { top: rect.top, left: rect.right } 
+    }));
+  };
+  
+  const closeFloatingMenu = (menuId) => {
+    setMenuPositions(prev => ({ ...prev, [menuId]: null }));
+  };
 
-  const [openDocs, setOpenDocs] = useState(false);
-
-  const menuItems = useMemo(() => [
-    { text: t('sidebar.dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
-  ], [t]);
-
-  const adminItems = useMemo(() => [
-    { text: t('sidebar.user_management'), icon: <PeopleIcon />, path: '/admin/users' },
-  ], [t]);
-
-  const docsItems = useMemo(() => [
-    { text: t('sidebar.request_signature'), icon: <EditIcon />, path: '/docs/request' },
-    { text: t('sidebar.needs_signature'), icon: <DocsIcon />, path: '/docs/inbox' },
-    { text: t('sidebar.validate_docs'), icon: <CheckCircleIcon />, path: '/docs/validate' },
-  ], [t]);
-
-  const financeItems = useMemo(() => [
-    { text: t('sidebar.income'), icon: <TrendingUp />, path: '/finance/income' },
-    { text: t('sidebar.expense'), icon: <TrendingDown />, path: '/finance/expense' },
-    { text: t('sidebar.balance'), icon: <WalletIcon />, path: '/finance/balance' },
-  ], [t]);
-
-  const bottomItems = useMemo(() => [
-    { text: t('sidebar.report_wa'), icon: <WhatsAppIcon />, path: '/report/wa' },
-    { text: t('sidebar.report_pdf'), icon: <PdfIcon />, path: '/report/pdf' },
-    { text: t('sidebar.sign_system'), icon: <SignIcon />, path: '/sign-system' },
-    { text: t('sidebar.image_splitter'), icon: <GridViewIcon />, path: '/tools/image-splitter' },
-  ], [t]);
-
-  const ListItemLink = ({ item, nested = false }) => {
+  // Render a single navigation item
+  const NavItem = ({ item, nested = false }) => {
+    const Icon = item.icon;
+    const text = t(item.labelKey) || item.labelKey;
+    
     const content = (
       <div
         className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 mx-2 rounded-xl transition-colors duration-200 ${
           isActive(item.path)
-            ? 'bg-blue-600 text-white shadow-md'
-            : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+            ? `${item.activeBg || 'bg-blue-600'} text-white shadow-md`
+            : `hover:bg-gray-100 dark:hover:bg-gray-800 ${item.color ? '' : 'text-gray-500 dark:text-gray-400'}`
         } ${nested && !isCollapsed ? 'pl-8' : ''}`}
       >
-        <div className={`${isCollapsed ? '' : 'mr-3'} ${isActive(item.path) ? 'text-white' : 'text-gray-400'}`}>
-          {item.icon}
+        <div className={`${isCollapsed ? '' : 'mr-3'} ${isActive(item.path) ? 'text-white' : (item.color || 'text-gray-400')}`}>
+          <Icon />
         </div>
-        {!isCollapsed && <span className="font-medium text-sm whitespace-nowrap">{item.text}</span>}
+        {!isCollapsed && <span className={`font-medium text-sm whitespace-nowrap ${!isActive(item.path) && item.color ? 'text-gray-700 dark:text-gray-300' : ''}`}>{text}</span>}
       </div>
     );
 
     if (isCollapsed) {
       return (
-        <Tooltip title={item.text} placement="right">
+        <Tooltip title={text} placement="right">
           <Link to={item.path} className="no-underline text-inherit block">
             {content}
           </Link>
@@ -100,187 +86,173 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
     }
 
     return (
-      <Link to={item.path} className="no-underline text-inherit block" onClick={() => window.innerWidth < 1024 && toggleSidebar && toggleSidebar()}>
+      <Link 
+        to={item.path} 
+        className="no-underline text-inherit block" 
+        onClick={() => window.innerWidth < 1024 && toggleSidebar && toggleSidebar()}
+      >
         {content}
       </Link>
     );
   };
 
-  return (
-    <>
-      <div className={`fixed left-0 top-0 bottom-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col z-50 transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}>
-        {/* Logo */}
-        <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <div className="w-4 h-4 bg-white rounded-sm opacity-50"></div>
+  // Render a collapsible menu section
+  const CollapsibleSection = ({ sectionId, section, nested = false }) => {
+    const Icon = section.icon;
+    const label = t(section.labelKey) || section.labelKey;
+    const isMenuOpen = openMenus[sectionId];
+    const position = menuPositions[sectionId];
+
+    if (isCollapsed) {
+      return (
+        <>
+          <Tooltip title={label} placement="right">
+            <div
+              className="flex items-center justify-center px-2 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
+              onClick={(e) => openFloatingMenu(sectionId, e)}
+            >
+              <div className="text-gray-400">
+                <Icon />
               </div>
-              {!isCollapsed && <h1 className="text-xl font-bold text-gray-800 dark:text-white whitespace-nowrap">Satu Data+</h1>}
-          </div>
-          <IconButton
-              onClick={toggleSidebar}
-              sx={{ display: { lg: 'none' } }}
-              className="text-gray-500 dark:text-gray-400"
-              size="small"
+            </div>
+          </Tooltip>
+          <Popover
+            open={Boolean(position)}
+            anchorReference="anchorPosition"
+            anchorPosition={position}
+            onClose={() => closeFloatingMenu(sectionId)}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            marginThreshold={0}
+            PaperProps={{ 
+              className: "dark:bg-gray-800 dark:text-white ml-2 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700",
+              elevation: 4
+            }}
           >
-              <CloseIcon />
-          </IconButton>
+            <div className="px-4 py-2 font-semibold text-sm border-b border-gray-100 dark:border-gray-700 mb-1 outline-none">
+              {label}
+            </div>
+            <MenuList className="p-0">
+              {section.items.map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <MenuItem 
+                    key={item.id} 
+                    onClick={() => {
+                      navigate(item.path);
+                      closeFloatingMenu(sectionId);
+                    }}
+                  >
+                    <ListItemIcon className="min-w-[36px] text-gray-500 dark:text-gray-400">
+                      <ItemIcon />
+                    </ListItemIcon>
+                    <ListItemText primary={t(item.labelKey) || item.labelKey} />
+                  </MenuItem>
+                );
+              })}
+            </MenuList>
+          </Popover>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <div
+          className="flex items-center px-4 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
+          onClick={() => toggleMenu(sectionId)}
+        >
+          <div className="mr-3 text-gray-400">
+            <Icon />
+          </div>
+          <span className="font-medium text-sm flex-1">{label}</span>
+          {isMenuOpen ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
         </div>
+        <Collapse in={isMenuOpen} timeout="auto" unmountOnExit>
+          <div className="space-y-1 mt-1">
+            {section.items.map((item) => (
+              <NavItem key={item.id} item={item} nested />
+            ))}
+          </div>
+        </Collapse>
+      </>
+    );
+  };
 
-        {/* Menu */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-1 overflow-x-hidden">
-          {!isCollapsed && <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">{t('sidebar.menu')}</p>}
-
-          {menuItems.map((item) => (
-            <ListItemLink key={item.text} item={item} />
-          ))}
-
-          {/* Collapsible OMK Docs Menu - For all users */}
+  return (
+    <div className={`fixed left-0 top-0 bottom-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col z-[60] transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      {/* Logo */}
+      <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        <div className="flex items-center gap-3">
           {isCollapsed ? (
-              <>
-                  <Tooltip title={t('sidebar.omk_docs')} placement="right">
-                      <div
-                          className="flex items-center justify-center px-2 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-                          onClick={(e) => setAnchorElDocs(e.currentTarget)}
-                      >
-                          <div className="text-gray-400">
-                              <DocsIcon />
-                          </div>
-                      </div>
-                  </Tooltip>
-                  <Menu
-                      anchorEl={anchorElDocs}
-                      open={Boolean(anchorElDocs)}
-                      onClose={() => setAnchorElDocs(null)}
-                      anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
-                      transformOrigin={{ vertical: 'center', horizontal: 'left' }}
-                      PaperProps={{
-                          className: "dark:bg-gray-800 dark:text-white ml-2"
-                      }}
-                  >
-                      <div className="px-4 py-2 font-semibold text-sm border-b border-gray-100 dark:border-gray-700 mb-1 outline-none">
-                          {t('sidebar.omk_docs')}
-                      </div>
-                      {docsItems.map((item) => (
-                          <MenuItem key={item.text} onClick={() => {
-                              navigate(item.path);
-                              setAnchorElDocs(null);
-                          }}>
-                              <ListItemIcon className="min-w-[36px] text-gray-500 dark:text-gray-400">
-                                  {item.icon}
-                              </ListItemIcon>
-                              <ListItemText primary={item.text} />
-                          </MenuItem>
-                      ))}
-                  </Menu>
-              </>
+             <img src="/xs-logo-satu-data.svg" alt="Satu Data Logo" className="w-10 h-10" />
           ) : (
-              <>
-                  <div
-                      className="flex items-center px-4 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-                      onClick={() => setOpenDocs(!openDocs)}
-                  >
-                      <div className="mr-3 text-gray-400">
-                          <DocsIcon />
-                      </div>
-                      <span className="font-medium text-sm flex-1">{t('sidebar.omk_docs')}</span>
-                      {openDocs ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
-                  </div>
-
-                  <Collapse in={openDocs} timeout="auto" unmountOnExit>
-                      <div className="space-y-1 mt-1">
-                          {docsItems.map((item) => (
-                              <ListItemLink key={item.text} item={item} nested />
-                          ))}
-                      </div>
-                  </Collapse>
-              </>
+             <img src="/xm-logo-satu-data.svg" alt="Satu Data Logo" className="h-12" />
           )}
-
-          {/* Admin Section - Only show if user has permission */}
-          {hasPermission(user.role, 'canManageUsers') && adminItems.length > 0 && (
-            <>
-              <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
-              {!isCollapsed && <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">{t('sidebar.admin')}</p>}
-              {adminItems.map((item) => (
-                <ListItemLink key={item.text} item={item} />
-              ))}
-            </>
-          )}
-
-          {/* Collapsible Finance Menu */}
-          {hasPermission(user.role, 'canManageFinance') && (
-            isCollapsed ? (
-              <>
-                  <Tooltip title={t('sidebar.finance')} placement="right">
-                      <div
-                          className="flex items-center justify-center px-2 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-                          onClick={(e) => setAnchorElFinance(e.currentTarget)}
-                      >
-                          <div className="text-gray-400">
-                              <MoneyIcon />
-                          </div>
-                      </div>
-                  </Tooltip>
-                  <Menu
-                      anchorEl={anchorElFinance}
-                      open={Boolean(anchorElFinance)}
-                      onClose={() => setAnchorElFinance(null)}
-                      anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
-                      transformOrigin={{ vertical: 'center', horizontal: 'left' }}
-                      PaperProps={{
-                          className: "dark:bg-gray-800 dark:text-white ml-2"
-                      }}
-                  >
-                      <div className="px-4 py-2 font-semibold text-sm border-b border-gray-100 dark:border-gray-700 mb-1 outline-none">
-                          {t('sidebar.finance')}
-                      </div>
-                      {financeItems.map((item) => (
-                          <MenuItem key={item.text} onClick={() => {
-                              navigate(item.path);
-                              setAnchorElFinance(null);
-                          }}>
-                              <ListItemIcon className="min-w-[36px] text-gray-500 dark:text-gray-400">
-                                  {item.icon}
-                              </ListItemIcon>
-                              <ListItemText primary={item.text} />
-                          </MenuItem>
-                      ))}
-                  </Menu>
-              </>
-            ) : (
-              <>
-                  <div
-                      className="flex items-center px-4 py-3 mx-2 rounded-xl cursor-pointer text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
-                      onClick={() => setOpenFinance(!openFinance)}
-                  >
-                      <div className="mr-3 text-gray-400">
-                          <MoneyIcon />
-                      </div>
-                      <span className="font-medium text-sm flex-1">{t('sidebar.finance')}</span>
-                      {openFinance ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
-                  </div>
-
-                  <Collapse in={openFinance} timeout="auto" unmountOnExit>
-                      <div className="space-y-1 mt-1">
-                          {financeItems.map((item) => (
-                              <ListItemLink key={item.text} item={item} nested />
-                          ))}
-                      </div>
-                  </Collapse>
-              </>
-            )
-          )}
-
-          <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
-
-          {!isCollapsed && <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">{t('sidebar.tools')}</p>}
-          {bottomItems.map((item) => (
-              <ListItemLink key={item.text} item={item} />
-          ))}
         </div>
+        <IconButton
+          onClick={toggleSidebar}
+          sx={{ display: { lg: 'none' } }}
+          className="text-gray-500 dark:text-gray-400"
+          size="small"
+        >
+          <CloseIcon />
+        </IconButton>
       </div>
-    </>
+
+      {/* Menu */}
+      <div className="flex-1 overflow-y-auto py-4 space-y-1 overflow-x-hidden">
+        {/* Main Section */}
+        {!isCollapsed && (
+          <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+            {t(navigationConfig.main.labelKey)}
+          </p>
+        )}
+        {navigationConfig.main.items.map((item) => (
+          <NavItem key={item.id} item={item} />
+        ))}
+
+        {/* Docs Section - Collapsible */}
+        <CollapsibleSection sectionId="docs" section={navigationConfig.docs} />
+
+        {/* Admin Section - Permission Required */}
+        {hasPermission(user.role, navigationConfig.admin.permission) && (
+          <>
+            <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
+            {!isCollapsed && (
+              <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                {t(navigationConfig.admin.labelKey)}
+              </p>
+            )}
+            {navigationConfig.admin.items.map((item) => (
+              <NavItem key={item.id} item={item} />
+            ))}
+          </>
+        )}
+
+        {/* Finance Section - Permission Required, Collapsible */}
+        {hasPermission(user.role, navigationConfig.finance.permission) && (
+          <CollapsibleSection sectionId="finance" section={navigationConfig.finance} />
+        )}
+
+        {/* Tools Section with Subgroups */}
+        <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
+        {!isCollapsed && (
+          <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+            {t(navigationConfig.tools.labelKey)}
+          </p>
+        )}
+        
+        {/* Tools Subgroups (Productivity, Utilities) */}
+        {navigationConfig.tools.subgroups?.map((subgroup) => (
+          <CollapsibleSection key={subgroup.id} sectionId={subgroup.id} section={subgroup} nested />
+        ))}
+        
+        {/* Standalone Tools Items */}
+        {navigationConfig.tools.items?.map((item) => (
+          <NavItem key={item.id} item={item} />
+        ))}
+      </div>
+    </div>
   );
 };
 

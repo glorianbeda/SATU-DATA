@@ -20,7 +20,7 @@ const MainLayoutContent = ({ children }) => {
 
   // Public paths where sidebar/header should not be shown
   const publicPaths = ['/login', '/register', '/forgot-password'];
-  const isPublic = publicPaths.some(path => location.pathname === path);
+  const isPublic = publicPaths.some(path => location.pathname === path) || location.pathname.startsWith('/f/');
 
   useEffect(() => {
     if (isPublic) return;
@@ -82,13 +82,14 @@ const MainLayoutContent = ({ children }) => {
           ></div>
         )}
 
-        <main className={`transition-all duration-300 p-4 md:p-8 ${isSidebarOpen ? 'ml-0' : 'ml-0'} ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-          <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1">
-                  <Header title={title} toggleSidebar={toggleSidebar} user={user} />
-              </div>
+        {/* Sticky Header Container */}
+        <div className={`sticky top-0 z-50 transition-all duration-300 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+          <div className="bg-gray-50 dark:bg-gray-900 px-4 md:px-8 pt-4 pb-2 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <Header title={title} toggleSidebar={toggleSidebar} user={user} />
           </div>
+        </div>
 
+        <main className={`transition-all duration-300 p-4 md:p-8 pt-2 md:pt-4 ${isSidebarOpen ? 'ml-0' : 'ml-0'} ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
           <div className="w-full overflow-x-auto">
               {children}
           </div>
