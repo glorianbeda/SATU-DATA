@@ -74,7 +74,14 @@ const loadRoutes = (dir, prefix = "") => {
 const loadRoutesV2 = (baseDir, currentPath = "") => {
   if (!fs.existsSync(baseDir)) return;
 
-  const items = fs.readdirSync(baseDir);
+  const items = fs.readdirSync(baseDir).sort((a, b) => {
+    const isDynamicA = a.includes("[") || a.includes("@");
+    const isDynamicB = b.includes("[") || b.includes("@");
+
+    if (isDynamicA && !isDynamicB) return 1;
+    if (!isDynamicA && isDynamicB) return -1;
+    return a.localeCompare(b);
+  });
 
   items.forEach((item) => {
     const fullPath = path.join(baseDir, item);
@@ -88,9 +95,10 @@ const loadRoutesV2 = (baseDir, currentPath = "") => {
         // Example: baseDir=routers/api, item=GET__login -> path=/api/login
 
         // Handle 'index' as empty (root of current path)
-        // Handle dynamic parameters [id] -> :id
+        // Handle dynamic parameters [id] -> :id, @id -> :id
         let finalName = name === "index" ? "" : name;
         finalName = finalName.replace(/\[(.*?)\]/g, ":$1");
+        finalName = finalName.replace(/@(\w+)/g, ":$1");
 
         let routePath = currentPath;
         if (finalName) {
@@ -109,9 +117,14 @@ const loadRoutesV2 = (baseDir, currentPath = "") => {
           }
           console.log(`[Route] ${method.toUpperCase()} ${routePath}`);
         }
+
+        // Continue recursion for nested routes inside endpoint directories
+        // e.g., GET__@id/members -> GET /path/:id/members
+        loadRoutesV2(fullPath, routePath);
       } else {
-        // It's a path segment - convert [param] to :param for routing
-        const pathSegment = item.replace(/\[(.*?)\]/g, ":$1");
+        // It's a path segment - convert [param] and @param to :param for routing
+        let pathSegment = item.replace(/\[(.*?)\]/g, ":$1");
+        pathSegment = pathSegment.replace(/@(\w+)/g, ":$1");
         loadRoutesV2(fullPath, `${currentPath}/${pathSegment}`);
       }
     }

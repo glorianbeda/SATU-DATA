@@ -37,6 +37,9 @@ model User {
   transactions        Transaction[]      @relation("CreatedTransactions")
   createdForms        Form[]             @relation("CreatedForms")
   formResponses       FormResponse[]     @relation("UserFormResponses")
+  archives            Archive[]          @relation("UploadedArchives")
+  archiveFolders      ArchiveFolder[]    @relation("CreatedArchiveFolders")
+  archiveShares       ArchiveShare[]     @relation("CreatedArchiveShares")
   role                Role               @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([roleId], map: "User_roleId_fkey")
@@ -227,4 +230,61 @@ model Note {
   user      User     @relation("UserNotes", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "Note_userId_fkey")
+}
+
+model ArchiveFolder {
+  id          Int             @id @default(autoincrement())
+  name        String          @db.VarChar(255)
+  description String?         @db.Text
+  parentId    Int?
+  createdById Int
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  parent      ArchiveFolder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children    ArchiveFolder[] @relation("FolderChildren")
+  createdBy   User            @relation("CreatedArchiveFolders", fields: [createdById], references: [id], onDelete: Cascade)
+  archives    Archive[]
+
+  @@index([parentId], map: "ArchiveFolder_parentId_fkey")
+  @@index([createdById], map: "ArchiveFolder_createdById_fkey")
+}
+
+model Archive {
+  id          Int            @id @default(autoincrement())
+  filename    String         @db.VarChar(255)
+  originalName String        @db.VarChar(255)
+  filePath    String         @db.Text
+  fileSize    Int
+  mimeType    String         @db.VarChar(255)
+  category    String         @default("Lainnya") @db.VarChar(100)
+  folderId    Int?
+  uploadedById Int
+  version     Int            @default(1)
+  parentVersionId Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  folder      ArchiveFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  uploadedBy  User           @relation("UploadedArchives", fields: [uploadedById], references: [id], onDelete: Cascade)
+  parentVersion Archive?     @relation("ArchiveVersions", fields: [parentVersionId], references: [id], onDelete: SetNull)
+  childVersions Archive[]    @relation("ArchiveVersions")
+  shares      ArchiveShare[]
+
+  @@index([folderId], map: "Archive_folderId_fkey")
+  @@index([uploadedById], map: "Archive_uploadedById_fkey")
+  @@index([parentVersionId], map: "Archive_parentVersionId_fkey")
+}
+
+model ArchiveShare {
+  id          Int      @id @default(autoincrement())
+  archiveId   Int
+  shareToken  String   @unique @db.VarChar(255)
+  permission  String   @default("VIEW") @db.VarChar(50)
+  expiresAt   DateTime?
+  createdById Int
+  createdAt   DateTime @default(now())
+  archive     Archive  @relation(fields: [archiveId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("CreatedArchiveShares", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([archiveId], map: "ArchiveShare_archiveId_fkey")
+  @@index([createdById], map: "ArchiveShare_createdById_fkey")
 }

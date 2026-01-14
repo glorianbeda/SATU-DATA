@@ -186,7 +186,10 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
           {isCollapsed ? (
              <img src="/xs-logo-satu-data.svg" alt="Satu Data Logo" className="w-10 h-10" />
           ) : (
-             <img src="/xm-logo-satu-data.svg" alt="Satu Data Logo" className="h-12" />
+              <>
+                <img src="/xs-logo-satu-data.svg" alt="Satu Data Logo" className="w-10 h-10" />
+                <span className="text-xl font-bold text-blue-900 dark:text-white tracking-tight">Satu Data</span>
+              </>
           )}
         </div>
         <IconButton

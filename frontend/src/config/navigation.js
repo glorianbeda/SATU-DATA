@@ -24,6 +24,7 @@ import {
   Transform,
   PhotoSizeSelectSmall as CompressIcon,
   ListAlt as FormIcon,
+  Inventory as ArchiveIcon,
 } from "@mui/icons-material";
 
 export const navigationConfig = {
@@ -69,6 +70,12 @@ export const navigationConfig = {
         labelKey: "sidebar.validate_docs",
         icon: CheckCircleIcon,
         path: "/docs/validate",
+      },
+      {
+        id: "archives",
+        labelKey: "sidebar.archives",
+        icon: ArchiveIcon,
+        path: "/archives",
       },
     ],
   },
