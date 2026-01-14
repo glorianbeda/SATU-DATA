@@ -38,6 +38,10 @@ model User {
   createdForms        Form[]             @relation("CreatedForms")
   formResponses       FormResponse[]     @relation("UserFormResponses")
   role                Role               @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAssets      Asset[]             @relation("AssetCreator")
+  borrowedLoans      Loan[]              @relation("Borrower")
+  approvedLoans      Loan[]              @relation("LoanApprover")
+  assetLogs         AssetLog[]          @relation("LogCreator")
 
   @@index([roleId], map: "User_roleId_fkey")
 }
@@ -227,4 +231,86 @@ model Note {
   user      User     @relation("UserNotes", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "Note_userId_fkey")
+}
+
+model AssetCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  assets    Asset[]
+}
+
+model Asset {
+  id            Int      @id @default(autoincrement())
+  name          String
+  assetCode     String   @unique
+  barcode       String   @unique
+  qrCode        String?
+  categoryId    Int
+  status        String   @default("AVAILABLE")
+  brand         String?
+  model         String?
+  serialNumber  String?
+  purchaseDate   DateTime?
+  purchasePrice Float?
+  location      String?
+  description   String?   @db.Text
+  imageUrl      String?   @db.Text
+  createdById   Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  category      AssetCategory @relation(fields: [categoryId], references: [id])
+  createdBy     User         @relation("AssetCreator", fields: [createdById], references: [id])
+  loans         Loan[]
+  logs          AssetLog[]
+
+  @@index([categoryId])
+  @@index([createdById])
+  @@index([status])
+}
+
+model Loan {
+  id            Int      @id @default(autoincrement())
+  assetId       Int
+  borrowerId    Int
+  status        String   @default("PENDING")
+  requestDate   DateTime @default(now())
+  approvedDate  DateTime?
+  borrowedDate  DateTime?
+  dueDate       DateTime?
+  returnedDate   DateTime?
+  approvedById  Int?
+  notes         String?  @db.Text
+  returnCondition String?
+  returnNotes   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  borrower      User      @relation("Borrower", fields: [borrowerId], references: [id])
+  approvedBy    User?     @relation("LoanApprover", fields: [approvedById], references: [id])
+  logs          AssetLog[]
+
+  @@index([assetId])
+  @@index([borrowerId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model AssetLog {
+  id        Int      @id @default(autoincrement())
+  assetId   Int
+  loanId    Int?
+  action    String
+  actionDate DateTime @default(now())
+  userId    Int
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  loan      Loan?    @relation(fields: [loanId], references: [id], onDelete: SetNull)
+  user      User      @relation("LogCreator", fields: [userId], references: [id])
+
+  @@index([assetId])
+  @@index([actionDate])
 }
