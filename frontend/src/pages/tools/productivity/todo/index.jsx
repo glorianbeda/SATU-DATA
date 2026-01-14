@@ -5,7 +5,8 @@ import {
   CircularProgress, Chip, Dialog, DialogTitle, DialogContent,
   DialogActions, FormControl, InputLabel, Select, MenuItem,
   Tooltip, ToggleButtonGroup, ToggleButton, InputAdornment,
-  Skeleton, useMediaQuery, useTheme, Fab
+  Skeleton, useMediaQuery, useTheme, Fab, Autocomplete,
+  Radio, RadioGroup, FormControlLabel
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -44,9 +45,9 @@ import { useLayout } from '~/context/LayoutContext';
 import { useAlert } from '~/context/AlertContext';
 
 const PRIORITY_COLORS = {
-  HIGH: { bg: '#fee2e2', color: '#dc2626', label: 'High' },
-  MEDIUM: { bg: '#fef3c7', color: '#d97706', label: 'Medium' },
-  LOW: { bg: '#dcfce7', color: '#16a34a', label: 'Low' },
+  HIGH: { bg: '#fee2e2', color: '#dc2626', label: 'Tinggi' },
+  MEDIUM: { bg: '#fef3c7', color: '#d97706', label: 'Sedang' },
+  LOW: { bg: '#dcfce7', color: '#16a34a', label: 'Rendah' },
 };
 
 const STATUS_CONFIG = {
@@ -67,7 +68,6 @@ function TaskCard({ task, onClick, isDragging }) {
       sx={{
         p: 2,
         mb: 1.5,
-        borderRadius: 2,
         borderRadius: 2,
         cursor: isDragging ? 'grabbing' : 'grab',
         bgcolor: 'background.paper',
@@ -347,8 +347,9 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
     category: '',
     dueDate: '',
     status: 'PENDING',
-    assigneeId: '',
+    assigneeIds: [],
   });
+  const [assignMode, setAssignMode] = useState('self'); // 'self' or 'others'
   const [members, setMembers] = useState([]);
 
   useEffect(() => {
@@ -362,6 +363,9 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
 
   useEffect(() => {
     if (task) {
+      const existingAssigneeId = task.assignee?.id;
+      const ownerId = members.find(m => m.isOwner)?.userId;
+      
       setForm({
         title: task.title || '',
         description: task.description || '',
@@ -369,25 +373,57 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
         category: task.category || '',
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
         status: task.status || 'PENDING',
-        assigneeId: task.assignee?.id || '',
+        assigneeIds: existingAssigneeId ? [existingAssigneeId] : (ownerId ? [ownerId] : []),
       });
+      
+      // Set mode based on whether assignee is owner or others
+      if (existingAssigneeId && existingAssigneeId !== ownerId) {
+        setAssignMode('others');
+      } else {
+        setAssignMode('self');
+      }
+    } else {
+      // New task - default to self assignment
+      const ownerId = members.find(m => m.isOwner)?.userId;
+      setForm(prev => ({
+        ...prev,
+        assigneeIds: ownerId ? [ownerId] : [],
+      }));
+      setAssignMode('self');
     }
-  }, [task]);
+  }, [task, members]);
 
   const handleSave = () => {
-    onSave({ ...task, ...form, dueDate: form.dueDate || null });
+    // For now, use first assignee for backward compatibility
+    const assigneeId = form.assigneeIds.length > 0 ? form.assigneeIds[0] : null;
+    onSave({ ...task, ...form, assigneeId, dueDate: form.dueDate || null });
   };
+
+  const handleModeChange = (event, newMode) => {
+    if (newMode !== null) {
+      setAssignMode(newMode);
+      if (newMode === 'self') {
+        const ownerId = members.find(m => m.isOwner)?.userId;
+        setForm(prev => ({ ...prev, assigneeIds: ownerId ? [ownerId] : [] }));
+      } else {
+        setForm(prev => ({ ...prev, assigneeIds: [] }));
+      }
+    }
+  };
+
+  // Get other members (non-owner) for multi-select
+  const otherMembers = members.filter(m => !m.isOwner);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {task?.id ? 'Edit Task' : 'New Task'}
+        {task?.id ? 'Edit Tugas' : 'Tugas Baru'}
         <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <TextField
           fullWidth
-          label="Title"
+          label="Judul"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           margin="normal"
@@ -395,7 +431,7 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
         />
         <TextField
           fullWidth
-          label="Description"
+          label="Deskripsi"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           margin="normal"
@@ -404,15 +440,15 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
         />
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
           <FormControl fullWidth>
-            <InputLabel>Priority</InputLabel>
+            <InputLabel>Prioritas</InputLabel>
             <Select
               value={form.priority}
-              label="Priority"
+              label="Prioritas"
               onChange={(e) => setForm({ ...form, priority: e.target.value })}
             >
-              <MenuItem value="LOW">Low</MenuItem>
-              <MenuItem value="MEDIUM">Medium</MenuItem>
-              <MenuItem value="HIGH">High</MenuItem>
+              <MenuItem value="LOW">Rendah</MenuItem>
+              <MenuItem value="MEDIUM">Sedang</MenuItem>
+              <MenuItem value="HIGH">Tinggi</MenuItem>
             </Select>
           </FormControl>
           <FormControl fullWidth>
@@ -422,52 +458,127 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
               label="Status"
               onChange={(e) => setForm({ ...form, status: e.target.value })}
             >
-              <MenuItem value="PENDING">Pending</MenuItem>
-              <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-              <MenuItem value="COMPLETED">Completed</MenuItem>
+              <MenuItem value="PENDING">Menunggu</MenuItem>
+              <MenuItem value="IN_PROGRESS">Dalam Proses</MenuItem>
+              <MenuItem value="COMPLETED">Selesai</MenuItem>
             </Select>
           </FormControl>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
           <TextField
             fullWidth
-            label="Category"
+            label="Kategori"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
-            placeholder="Design, Research, QA..."
+            placeholder="Desain, Riset, QA..."
           />
           <TextField
             fullWidth
-            label="Due Date"
+            label="Tenggat Waktu"
             type="date"
             value={form.dueDate}
             onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
             InputLabelProps={{ shrink: true }}
           />
         </Box>
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Assignee</InputLabel>
-          <Select
-            value={form.assigneeId}
-            label="Assignee"
-            onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            Ditugaskan Kepada
+          </Typography>
+          
+          {/* Mode Radio Buttons */}
+          <RadioGroup
+            value={assignMode}
+            onChange={(e) => handleModeChange(e, e.target.value)}
+            row
+            sx={{ mb: 2 }}
           >
-            <MenuItem value="">Unassigned</MenuItem>
-            {members.map(m => (
-              <MenuItem key={m.userId} value={m.userId}>{m.name}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            <FormControlLabel 
+              value="self" 
+              control={<Radio size="small" />} 
+              label="Untuk Saya" 
+            />
+            <FormControlLabel 
+              value="others" 
+              control={<Radio size="small" />} 
+              label="Untuk Orang Lain" 
+            />
+          </RadioGroup>
+
+          {/* Multi-select Autocomplete - shown when "others" is selected */}
+          {assignMode === 'others' && (
+            <Autocomplete
+              multiple
+              options={otherMembers}
+              getOptionLabel={(option) => option.name || ''}
+              value={otherMembers.filter(m => form.assigneeIds.includes(m.userId))}
+              onChange={(event, newValue) => {
+                setForm(prev => ({
+                  ...prev,
+                  assigneeIds: newValue.map(v => v.userId)
+                }));
+              }}
+              isOptionEqualToValue={(option, value) => option.userId === value.userId}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Cari dan pilih orang"
+                  placeholder="Ketik nama..."
+                  size="small"
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option.userId}
+                    label={option.name}
+                    size="small"
+                    onDelete={getTagProps({ index }).onDelete}
+                    sx={{ m: 0.5 }}
+                  />
+                ))
+              }
+              renderOption={(props, option) => (
+                <li {...props} key={option.userId}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ 
+                      width: 28, height: 28, borderRadius: '50%', 
+                      bgcolor: 'primary.main', color: 'white',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.75rem', fontWeight: 'bold'
+                    }}>
+                      {option.name?.charAt(0).toUpperCase()}
+                    </Box>
+                    <Typography variant="body2">{option.name}</Typography>
+                  </Box>
+                </li>
+              )}
+              noOptionsText="Tidak ada anggota lain"
+              sx={{ bgcolor: 'background.paper' }}
+            />
+          )}
+
+          {/* Show selected assignees summary */}
+          {assignMode === 'self' && members.find(m => m.isOwner) && (
+            <Chip
+              label={members.find(m => m.isOwner)?.name}
+              color="primary"
+              variant="outlined"
+              size="small"
+            />
+          )}
+        </Box>
       </DialogContent>
       <DialogActions>
         {task?.id && (
           <Button onClick={() => onDelete(task.id)} color="error" sx={{ mr: 'auto' }}>
-            Delete
+            Hapus
           </Button>
         )}
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>Batal</Button>
         <Button onClick={handleSave} variant="contained" disabled={!form.title.trim()}>
-          Save
+          Simpan
         </Button>
       </DialogActions>
     </Dialog>
@@ -491,21 +602,21 @@ function TaskListModal({ open, list, onClose, onSave, onDelete }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{list?.id ? 'Edit List' : 'New List'}</DialogTitle>
+      <DialogTitle>{list?.id ? 'Edit Daftar' : 'Daftar Baru'}</DialogTitle>
       <DialogContent>
         <TextField
-          fullWidth label="Name" value={name} onChange={(e) => setName(e.target.value)} required margin="normal"
+          fullWidth label="Nama" value={name} onChange={(e) => setName(e.target.value)} required margin="normal"
         />
         <TextField
-          fullWidth label="Description" value={description} onChange={(e) => setDescription(e.target.value)} margin="normal" multiline rows={2}
+          fullWidth label="Deskripsi" value={description} onChange={(e) => setDescription(e.target.value)} margin="normal" multiline rows={2}
         />
       </DialogContent>
       <DialogActions>
         {list?.id && (
-          <Button onClick={() => onDelete(list.id)} color="error" sx={{ mr: 'auto' }}>Delete</Button>
+          <Button onClick={() => onDelete(list.id)} color="error" sx={{ mr: 'auto' }}>Hapus</Button>
         )}
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={() => onSave({ ...list, name, description })} variant="contained" disabled={!name.trim()}>Save</Button>
+        <Button onClick={onClose}>Batal</Button>
+        <Button onClick={() => onSave({ ...list, name, description })} variant="contained" disabled={!name.trim()}>Simpan</Button>
       </DialogActions>
     </Dialog>
   );
@@ -524,7 +635,7 @@ function MemberModal({ open, listId, onClose }) {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members`, { withCredentials: true });
       setMembers(res.data.members || []);
     } catch (err) {
-      showError('Failed to load members');
+      showError('Gagal memuat anggota');
     } finally {
       setLoading(false);
     }
@@ -537,41 +648,41 @@ function MemberModal({ open, listId, onClose }) {
   const handleInvite = async () => {
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members`, { email: inviteEmail, permission: 'EDITOR' }, { withCredentials: true });
-      showSuccess('Member invited');
+      showSuccess('Anggota berhasil diundang');
       setInviteEmail('');
       fetchMembers();
     } catch (err) {
-      showError('Failed to invite member');
+      showError('Gagal mengundang anggota');
     }
   };
 
   const handleRemove = async (userId) => {
-    if (!confirm('Remove this member?')) return;
+    if (!confirm('Hapus anggota ini?')) return;
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members/${userId}`, { withCredentials: true });
-      showSuccess('Member removed');
+      showSuccess('Anggota berhasil dihapus');
       fetchMembers();
     } catch (err) {
-      showError('Failed to remove member');
+      showError('Gagal menghapus anggota');
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Valid Members</DialogTitle>
+      <DialogTitle>Anggota</DialogTitle>
       <DialogContent dividers>
         <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
           <TextField 
-            fullWidth size="small" label="Invite by Email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="email@example.com"
+            fullWidth size="small" label="Undang via Email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="email@contoh.com"
           />
-          <Button variant="contained" onClick={handleInvite} disabled={!inviteEmail}>Invite</Button>
+          <Button variant="contained" onClick={handleInvite} disabled={!inviteEmail}>Undang</Button>
         </Box>
         {loading ? <CircularProgress /> : (
           <Box>
             {members.map(m => (
               <Box key={m.userId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: '1px solid #eee' }}>
                 <Box>
-                  <Typography variant="subtitle2">{m.name} {m.isOwner && '(Owner)'}</Typography>
+                  <Typography variant="subtitle2">{m.name} {m.isOwner && '(Pemilik)'}</Typography>
                   <Typography variant="caption" color="text.secondary">{m.email}</Typography>
                 </Box>
                 {!m.isOwner && (
@@ -582,7 +693,7 @@ function MemberModal({ open, listId, onClose }) {
           </Box>
         )}
       </DialogContent>
-      <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
+      <DialogActions><Button onClick={onClose}>Tutup</Button></DialogActions>
     </Dialog>
   );
 }
