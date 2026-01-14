@@ -62,13 +62,10 @@ const LoginForm = ({ onSwitch }) => {
     return (
         <Box
             sx={{
-                my: 8,
-                mx: 4,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 width: '100%',
-                maxWidth: '500px',
             }}
         >
             <Typography component="h1" variant="h4" fontWeight="bold" color="primary" sx={{ mb: 1 }}>

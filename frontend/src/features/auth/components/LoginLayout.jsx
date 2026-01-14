@@ -7,10 +7,9 @@ const LoginLayout = () => {
     const { t } = useTranslation();
 
     return (
-        <div className="flex min-h-screen bg-white dark:bg-gray-900 w-full overflow-hidden">
-            {/* Left Side - Image/Branding */}
-            {/* Left Side - Image/Branding */}
-            <div className="hidden md:flex md:w-5/12 relative bg-gray-900">
+        <div className="flex min-h-screen bg-white dark:bg-gray-900 w-full">
+            {/* Left Side - Image/Branding - Hidden on mobile */}
+            <div className="hidden md:flex md:w-5/12 relative bg-gray-900 flex-shrink-0">
                 <img
                     src={loginImage}
                     alt="Login Background"
@@ -24,7 +23,7 @@ const LoginLayout = () => {
             </div>
 
             {/* Right Side - Login Form */}
-            <div className="w-full md:w-7/12 flex items-center justify-center bg-white dark:bg-gray-900">
+            <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-900 px-4 py-8 min-h-screen">
                 <LoginForm />
             </div>
         </div>

@@ -61,7 +61,8 @@
     "pdf_compress": "Kompres PDF",
     "pdf_edit": "Atur Halaman",
     "pdf_split": "Pisah PDF",
-    "pdf_convert": "Konversi PDF"
+    "pdf_convert": "Konversi PDF",
+    "archives": "Arsip Dokumen"
   },
   "profile": {
     "title": "Profil Pengguna",

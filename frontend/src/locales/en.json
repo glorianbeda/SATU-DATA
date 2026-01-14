@@ -56,7 +56,13 @@
     "productivity": "Productivity",
     "utilities": "Utilities",
     "forms": "Dynamic Forms",
-    "logout": "Logout"
+    "logout": "Logout",
+    "pdf_editor": "PDF Editor",
+    "pdf_compress": "Compress PDF",
+    "pdf_edit": "Arrange Pages",
+    "pdf_split": "Split PDF",
+    "pdf_convert": "Convert PDF",
+    "archives": "Document Archives"
   },
   "profile": {
     "title": "User Profile",
