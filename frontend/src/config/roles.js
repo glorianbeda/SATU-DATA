@@ -11,6 +11,10 @@ export const ROLE_PERMISSIONS = {
     canSignDocs: true,
     canRequestDocs: true,
     canViewDashboard: true,
+    canManageInventory: true,
+    canApproveLoans: true,
+    canViewAllLoans: true,
+    canRequestLoans: true,
   },
   [ROLES.ADMIN]: {
     canManageUsers: false,
@@ -18,6 +22,10 @@ export const ROLE_PERMISSIONS = {
     canSignDocs: true,
     canRequestDocs: true,
     canViewDashboard: true,
+    canManageInventory: true,
+    canApproveLoans: true,
+    canViewAllLoans: true,
+    canRequestLoans: true,
   },
   [ROLES.MEMBER]: {
     canManageUsers: false,
@@ -25,6 +33,10 @@ export const ROLE_PERMISSIONS = {
     canSignDocs: false,
     canRequestDocs: true,
     canViewDashboard: true,
+    canManageInventory: false,
+    canApproveLoans: false,
+    canViewAllLoans: false,
+    canRequestLoans: true,
   },
 };
 

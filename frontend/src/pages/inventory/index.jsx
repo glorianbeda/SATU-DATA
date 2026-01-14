@@ -6,18 +6,86 @@ import {
   CardContent,
   Grid,
   Paper,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Chip,
+  Avatar,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Inventory as InventoryIcon,
-  Request as RequestIcon,
+  RequestPage as RequestIcon,
   TrendingUp,
   TrendingDown,
   CheckCircle,
+  PieChart as PieChartIcon,
+  History as HistoryIcon,
+  ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
+
+const PieChart = ({ data, colors, labels }) => {
+  const total = data.reduce((sum, value) => sum + value, 0);
+  let currentAngle = 0;
+
+  const slices = data.map((value, index) => {
+    const angle = (value / total) * 360;
+    const slice = (
+      <g key={index}>
+        <path
+          d={describeArc(100, 100, 80, currentAngle, currentAngle + angle)}
+          fill={colors[index]}
+          stroke="#fff"
+          strokeWidth="2"
+        />
+        <text
+          x={100 + 50 * Math.cos((currentAngle + angle / 2) * Math.PI / 180)}
+          y={100 + 50 * Math.sin((currentAngle + angle / 2) * Math.PI / 180)}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="#fff"
+          fontSize="12"
+          fontWeight="bold"
+        >
+          {Math.round((value / total) * 100)}%
+        </text>
+      </g>
+    );
+    currentAngle += angle;
+    return slice;
+  });
+
+  return (
+    <svg viewBox="0 0 200 200" width="100%" height="100%">
+      {slices}
+    </svg>
+  );
+};
+
+const describeArc = (x, y, radius, startAngle, endAngle) => {
+  const start = polarToCartesian(x, y, radius, endAngle);
+  const end = polarToCartesian(x, y, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return [
+    "M", x, y,
+    "L", start.x, start.y,
+    "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+    "Z"
+  ].join(" ");
+};
+
+const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
+  const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+  return {
+    x: centerX + (radius * Math.cos(angleInRadians)),
+    y: centerY + (radius * Math.sin(angleInRadians))
+  };
+};
 
 const InventoryDashboard = () => {
   const { t } = useTranslation();
@@ -29,8 +97,11 @@ const InventoryDashboard = () => {
     lost: 0,
     pendingRequests: 0,
     overdue: 0,
+    categoryDistribution: [],
   });
   const [loading, setLoading] = useState(true);
+  const [assets, setAssets] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
 
   const fetchStats = async () => {
     try {
@@ -39,6 +110,24 @@ const InventoryDashboard = () => {
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchAssets = async () => {
+    try {
+      const response = await api.get(INVENTORY_API.GET_ASSETS);
+      setAssets(response.data.assets || []);
+    } catch (error) {
+      console.error('Error fetching assets:', error);
+    }
+  };
+
+  const fetchRecentActivity = async () => {
+    try {
+      const response = await api.get(INVENTORY_API.GET_HISTORY_USER);
+      setRecentActivity(response.data.logs || []);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
     } finally {
       setLoading(false);
     }
@@ -46,7 +135,57 @@ const InventoryDashboard = () => {
 
   useEffect(() => {
     fetchStats();
+    fetchAssets();
+    fetchRecentActivity();
   }, []);
+
+  const categoryData = assets.reduce((acc, asset) => {
+    const categoryName = asset.category?.name || 'Uncategorized';
+    acc[categoryName] = (acc[categoryName] || 0) + 1;
+    return acc;
+  }, {});
+
+  const categoryLabels = Object.keys(categoryData);
+  const categoryValues = Object.values(categoryData);
+  const categoryColors = ['#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#c2185b', '#0097a7'];
+
+  const statusData = [stats.available, stats.borrowed, stats.maintenance, stats.lost];
+  const statusLabels = [t('inventory.available'), t('inventory.borrowed'), t('inventory.maintenance'), t('inventory.lost')];
+  const statusColors = ['#2e7d32', '#ed6c02', '#d32f2f', '#d32f2f'];
+
+  const getActionIcon = (action) => {
+    switch (action) {
+      case 'BORROWED':
+        return <RequestIcon color="primary" />;
+      case 'RETURNED':
+        return <CheckCircle color="success" />;
+      case 'MAINTENANCE':
+        return <TrendingDown color="error" />;
+      case 'DAMAGED':
+        return <TrendingDown color="error" />;
+      case 'STATUS_CHANGE':
+        return <HistoryIcon color="info" />;
+      default:
+        return <HistoryIcon />;
+    }
+  };
+
+  const getActionLabel = (action) => {
+    switch (action) {
+      case 'BORROWED':
+        return t('inventory.borrow');
+      case 'RETURNED':
+        return t('inventory.return');
+      case 'MAINTENANCE':
+        return t('inventory.maintenance');
+      case 'DAMAGED':
+        return t('inventory.condition_damaged');
+      case 'STATUS_CHANGE':
+        return t('common.status');
+      default:
+        return action;
+    }
+  };
 
   const StatCard = ({ icon: Icon, title, value, color, onClick }) => (
     <Card sx={{ height: '100%' }} onClick={onClick}>
@@ -231,6 +370,150 @@ const InventoryDashboard = () => {
             <Typography>{t('inventory.return')}</Typography>
           </Box>
         </Box>
+      </Paper>
+
+      <Grid container spacing={3} sx={{ mt: 3 }}>
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <PieChartIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">
+                {t('inventory.asset_status_distribution')}
+              </Typography>
+            </Box>
+            {stats.totalAssets > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Box sx={{ width: 200, height: 200 }}>
+                  <PieChart
+                    data={statusData}
+                    colors={statusColors}
+                    labels={statusLabels}
+                  />
+                </Box>
+                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+                  {statusLabels.map((label, index) => (
+                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: statusColors[index] }} />
+                      <Typography variant="body2">
+                        {label}: {statusData[index]}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                {t('inventory.no_assets')}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <InventoryIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">
+                {t('inventory.asset_category_distribution')}
+              </Typography>
+            </Box>
+            {categoryLabels.length > 0 ? (
+              <Box>
+                {categoryLabels.map((label, index) => {
+                  const percentage = Math.round((categoryValues[index] / stats.totalAssets) * 100);
+                  return (
+                    <Box key={index} sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="body2">{label}</Typography>
+                        <Typography variant="body2" fontWeight="bold">
+                          {categoryValues[index]} ({percentage}%)
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          height: 8,
+                          bgcolor: 'grey.200',
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            height: '100%',
+                            width: `${percentage}%`,
+                            bgcolor: categoryColors[index % categoryColors.length],
+                            borderRadius: 4,
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                {t('inventory.no_assets')}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Paper elevation={3} sx={{ mt: 3, p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <HistoryIcon sx={{ mr: 1 }} />
+          <Typography variant="h6">
+            {t('inventory.recent_activity')}
+          </Typography>
+        </Box>
+        {recentActivity.length > 0 ? (
+          <List>
+            {recentActivity.slice(0, 10).map((activity, index) => (
+              <React.Fragment key={activity.id}>
+                <ListItem alignItems="flex-start">
+                  <Avatar sx={{ mr: 2, bgcolor: 'grey.200' }}>
+                    {getActionIcon(activity.action)}
+                  </Avatar>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" fontWeight="bold">
+                          {getActionLabel(activity.action)}
+                        </Typography>
+                        <Chip
+                          label={activity.action}
+                          size="small"
+                          color="default"
+                          variant="outlined"
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {activity.asset?.name || t('inventory.asset')}
+                        </Typography>
+                        {activity.notes && (
+                          <Typography variant="caption" color="text.secondary">
+                            {activity.notes}
+                          </Typography>
+                        )}
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(activity.actionDate).toLocaleString('id-ID')}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+                {index < Math.min(recentActivity.length, 10) - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+            {t('inventory.no_assets')}
+          </Typography>
+        )}
       </Paper>
     </Box>
   );

@@ -11,4 +11,17 @@ export const INVENTORY_API = {
   UPDATE_ASSET: (id) => `/api/inventory/assets/${id}`,
   DELETE_ASSET: (id) => `/api/inventory/assets/${id}`,
   GENERATE_BARCODE: (id) => `/api/inventory/assets/${id}/generate-barcode`,
+
+  // Loans
+  GET_LOANS: "/api/inventory/loans",
+  GET_LOAN: (id) => `/api/inventory/loans/${id}`,
+  CREATE_LOAN: "/api/inventory/loans",
+  APPROVE_LOAN: (id) => `/api/inventory/loans/${id}/approve`,
+  REJECT_LOAN: (id) => `/api/inventory/loans/${id}/reject`,
+  BORROW_LOAN: (id) => `/api/inventory/loans/${id}/borrow`,
+  RETURN_LOAN: (id) => `/api/inventory/loans/${id}/return`,
+
+  // History
+  GET_ASSET_HISTORY: (id) => `/api/inventory/history/asset/${id}`,
+  GET_USER_HISTORY: (id) => `/api/inventory/history/user/${id}`,
 };
