@@ -32,6 +32,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
     finance: true,
     productivity: false,
     utilities: false,
+    inventory: false,
   });
   
   // Floating menu anchors (coordinates) for collapsed mode
@@ -216,6 +217,9 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
 
         {/* Docs Section - Collapsible */}
         <CollapsibleSection sectionId="docs" section={navigationConfig.docs} />
+
+        {/* Inventory Section - Collapsible */}
+        <CollapsibleSection sectionId="inventory" section={navigationConfig.inventory} />
 
         {/* Admin Section - Permission Required */}
         {hasPermission(user.role, navigationConfig.admin.permission) && (

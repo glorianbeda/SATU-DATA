@@ -27,7 +27,7 @@ import {
   Inventory as ArchiveIcon,
   Inventory as InventoryIcon,
   Category as CategoryIcon,
-  Request as RequestIcon,
+  RequestPage as RequestIcon,
 } from "@mui/icons-material";
 
 export const navigationConfig = {
