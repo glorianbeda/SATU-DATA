@@ -25,6 +25,9 @@ import {
   PhotoSizeSelectSmall as CompressIcon,
   ListAlt as FormIcon,
   Inventory as ArchiveIcon,
+  Inventory as InventoryIcon,
+  Category as CategoryIcon,
+  Request as RequestIcon,
 } from "@mui/icons-material";
 
 export const navigationConfig = {
@@ -223,6 +226,34 @@ export const navigationConfig = {
         labelKey: "sidebar.sign_system",
         icon: SignIcon,
         path: "/sign-system",
+      },
+    ],
+  },
+
+  // INVENTARIS OMK section
+  inventory: {
+    labelKey: "sidebar.inventory",
+    icon: InventoryIcon,
+    collapsible: true,
+    items: [
+      {
+        id: "inventory-dashboard",
+        labelKey: "sidebar.inventory_dashboard",
+        icon: DashboardIcon,
+        path: "/inventory",
+      },
+      {
+        id: "asset-management",
+        labelKey: "sidebar.asset_management",
+        icon: CategoryIcon,
+        path: "/inventory/assets",
+        permission: "canManageInventory",
+      },
+      {
+        id: "loan-requests",
+        labelKey: "sidebar.loan_requests",
+        icon: RequestIcon,
+        path: "/inventory/loans",
       },
     ],
   },
