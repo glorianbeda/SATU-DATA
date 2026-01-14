@@ -291,6 +291,7 @@ model ArchiveShare {
 
   @@index([archiveId], map: "ArchiveShare_archiveId_fkey")
   @@index([createdById], map: "ArchiveShare_createdById_fkey")
+}
 
 model AssetCategory {
   id        Int      @id @default(autoincrement())

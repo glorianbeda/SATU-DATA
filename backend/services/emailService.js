@@ -179,9 +179,60 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
   });
 };
 
+/**
+ * Send loan status change notification email
+ * @param {string} email - Recipient email
+ * @param {string} name - User name
+ * @param {string} assetName - Asset name
+ * @param {string} status - New loan status
+ * @param {string} type - Notification type (loan_status)
+ * @returns {Promise<{ success: boolean, data?: any, error?: string }>}
+ */
+const sendLoanNotificationEmail = async (
+  email,
+  name,
+  assetName,
+  status,
+  type = "loan_status"
+) => {
+  const statusMessages = {
+    APPROVED: "Your loan request has been approved",
+    REJECTED: "Your loan request has been rejected",
+    BORROWED: "You have successfully borrowed the asset",
+    RETURNED: "Your loan has been completed and asset returned",
+    OVERDUE:
+      "Your loan is overdue. Please return the asset as soon as possible",
+  };
+
+  const subject = `Loan Status Update: ${status}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #2563eb;">Loan Status Update</h1>
+      <p>Hi ${name},</p>
+      <p>${
+        statusMessages[status] ||
+        `Your loan status has been updated to: ${status}`
+      }</p>
+      <p><strong>Asset:</strong> ${assetName}</p>
+      <p><strong>Status:</strong> ${status}</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+      <p style="color: #999; font-size: 12px;">This is an automated notification from Satu Data+ Inventory System.</p>
+      <p style="color: #999; font-size: 12px;">If you have any questions, please contact your administrator.</p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject,
+    html,
+    type,
+  });
+};
+
 module.exports = {
   resend,
   sendEmail,
   sendVerificationEmail,
+  sendLoanNotificationEmail,
   canSendEmail,
 };
