@@ -1,0 +1,6 @@
+- [ ] Install `puppeteer` in backend
+- [ ] Implement `LabelService` in backend
+- [ ] Implement `POST /api/inventory/labels/generate`
+- [ ] Refactor `PrintLabel.jsx`
+- [ ] Refactor `BarcodeLabelPrint.jsx`
+- [ ] Verify PDF output

@@ -5,6 +5,7 @@ description: Scaffold a new OpenSpec change and validate strictly.
 **Guardrails**
 - Favor straightforward, minimal implementations first and add complexity only when it is requested or clearly required.
 - Keep changes tightly scoped to the requested outcome.
+- **Ensure i18n consistency:** Always update `id.json` and `en.json` when adding new user-facing text. Do not hardcode strings.
 - Refer to `openspec/AGENTS.md` (located inside the `openspec/` directory—run `ls openspec` or `openspec update` if you don't see it) if you need additional OpenSpec conventions or clarifications.
 - Identify any vague or ambiguous details and ask the necessary follow-up questions before editing files.
 - Do not write any code during the proposal stage. Only create design documents (proposal.md, tasks.md, design.md, and spec deltas). Implementation happens in the apply stage after approval.
