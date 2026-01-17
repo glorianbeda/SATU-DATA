@@ -23,6 +23,15 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    // Pre-transform commonly used files to avoid lag on first request
+    warmup: {
+      clientFiles: [
+        "./src/main.jsx",
+        "./src/App.jsx",
+        "./src/components/Sidebar.jsx",
+        "./src/index.css",
+      ],
+    },
   },
   optimizeDeps: {
     include: [
@@ -32,6 +41,16 @@ export default defineConfig({
       "@imgly/background-removal",
       "react-i18next",
       "i18next",
+      "framer-motion",
+      "react-calendar-heatmap",
+      "react-tooltip",
+      "react-apexcharts",
+      "jspdf",
+      "jspdf-autotable",
+      "xlsx",
+      "jsbarcode",
+      "pdfjs-dist",
+      "react-pdf",
     ],
     exclude: ["@imgly/background-removal"],
   },
