@@ -6,82 +6,100 @@ const prisma = new PrismaClient();
 module.exports = [
   authMiddleware,
   async (req, res) => {
-    const { assetId, dueDate, notes } = req.body;
+    const { assetId, assetIds, dueDate, notes } = req.body;
 
-    if (!assetId) {
-      return res.status(400).json({ error: "Asset ID is required" });
+    // Normalize input to array
+    let targetAssetIds = [];
+    if (assetIds && Array.isArray(assetIds)) {
+      targetAssetIds = assetIds.map((id) => parseInt(id));
+    } else if (assetId) {
+      targetAssetIds = [parseInt(assetId)];
+    }
+
+    if (targetAssetIds.length === 0) {
+      return res.status(400).json({ error: "Asset ID(s) is required" });
     }
 
     try {
-      // Check if asset exists and is available
-      const asset = await prisma.asset.findUnique({
-        where: { id: parseInt(assetId) },
-        include: {
-          loans: {
-            where: {
-              status: { in: ["PENDING", "APPROVED", "BORROWED"] },
-            },
-          },
-        },
-      });
-
-      if (!asset) {
-        return res.status(404).json({ error: "Asset not found" });
-      }
-
-      if (asset.status !== "AVAILABLE") {
-        return res.status(400).json({
-          error: `Asset is not available. Current status: ${asset.status}`,
-        });
-      }
-
-      if (asset.loans.length > 0) {
-        return res.status(400).json({
-          error: "Asset already has active loan requests",
-        });
-      }
-
       // Calculate due date (default 7 days from now)
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
+      const finalDueDate = dueDate ? new Date(dueDate) : defaultDueDate;
 
-      const loan = await prisma.loan.create({
-        data: {
-          assetId: parseInt(assetId),
-          borrowerId: req.user.id,
-          dueDate: dueDate ? new Date(dueDate) : defaultDueDate,
-          notes: notes || null,
-        },
-        include: {
-          asset: {
+      // Use transaction to ensure atomicity
+      const result = await prisma.$transaction(async (tx) => {
+        const createdLoans = [];
+
+        for (const id of targetAssetIds) {
+          // Check availability for each asset
+          const asset = await tx.asset.findUnique({
+            where: { id },
             include: {
-              category: true,
+              loans: {
+                where: {
+                  status: { in: ["PENDING", "APPROVED", "BORROWED"] },
+                },
+              },
             },
-          },
-          borrower: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+          });
+
+          if (!asset) {
+            throw new Error(`Asset ${id} not found`);
+          }
+
+          if (asset.status !== "AVAILABLE") {
+            throw new Error(`Asset ${asset.name} is not available`);
+          }
+
+          if (asset.loans.length > 0) {
+            throw new Error(
+              `Asset ${asset.name} already has active loan requests`
+            );
+          }
+
+          // Create Loan
+          const loan = await tx.loan.create({
+            data: {
+              assetId: id,
+              borrowerId: req.user.id,
+              dueDate: finalDueDate,
+              notes: notes || null,
+              status: "PENDING",
             },
-          },
-        },
+            include: {
+              asset: true,
+            },
+          });
+
+          // Create Log
+          await tx.assetLog.create({
+            data: {
+              assetId: id,
+              loanId: loan.id,
+              action: "BORROWED", // Intentionally using 'BORROWED' as initial action per existing logic, or should change to 'REQUESTED'? Existing logic used 'BORROWED' log action for creation. Keeping consistency.
+              userId: req.user.id,
+              notes: "Loan requested (Batch)",
+            },
+          });
+
+          createdLoans.push(loan);
+        }
+
+        return createdLoans;
       });
 
-      // Create asset log
-      await prisma.assetLog.create({
-        data: {
-          assetId: parseInt(assetId),
-          loanId: loan.id,
-          action: "BORROWED",
-          userId: req.user.id,
-          notes: "Loan requested",
-        },
-      });
-
-      res.status(201).json({ loan });
+      res.status(201).json({ loans: result });
     } catch (error) {
       console.error("Create loan error:", error);
+      // Determine if it's a known error
+      if (
+        error.message.includes("Asset") &&
+        (error.message.includes("not found") ||
+          error.message.includes("not available") ||
+          error.message.includes("active loan"))
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
       res.status(500).json({ error: "Internal server error" });
     }
   },

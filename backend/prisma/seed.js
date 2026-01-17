@@ -23,7 +23,19 @@ async function main() {
     create: { name: "MEMBER" },
   });
 
-  console.log("Roles created:", superAdminRole, adminRole, memberRole);
+  const koordinatorInventarisRole = await prisma.role.upsert({
+    where: { name: "KOORDINATOR_INVENTARIS" },
+    update: {},
+    create: { name: "KOORDINATOR_INVENTARIS" },
+  });
+
+  console.log(
+    "Roles created:",
+    superAdminRole,
+    adminRole,
+    memberRole,
+    koordinatorInventarisRole
+  );
 
   // Create Super Admin User
   // Password should be hashed. Using 'password123' for now.
@@ -42,6 +54,26 @@ async function main() {
   });
 
   console.log("Super Admin created:", superAdmin);
+
+  // Create default Asset Categories
+  const categories = [
+    { name: "Elektronik", code: "ELEKTRONIK" },
+    { name: "Furniture", code: "FURNITURE" },
+    { name: "Kendaraan", code: "KENDARAAN" },
+    { name: "Peralatan Kantor", code: "PERALATAN_KANTOR" },
+    { name: "Perlengkapan Audio Visual", code: "AUDIO_VISUAL" },
+    { name: "Lainnya", code: "LAINNYA" },
+  ];
+
+  for (const cat of categories) {
+    await prisma.assetCategory.upsert({
+      where: { code: cat.code },
+      update: {},
+      create: cat,
+    });
+  }
+
+  console.log("Asset categories seeded:", categories.length);
 }
 
 main()

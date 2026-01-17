@@ -13,7 +13,10 @@ const checkRole = (allowedRoles) => {
     // Handle role being an object (with name property) or a string
     const userRole = req.user.role?.name || req.user.role;
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    if (
+      !userRole ||
+      (!allowedRoles.includes(userRole) && userRole !== "SUPER_ADMIN")
+    ) {
       return res
         .status(403)
         .json({ message: "Forbidden: Insufficient permissions" });

@@ -8,14 +8,16 @@ module.exports = [
   authMiddleware,
   async (req, res) => {
     try {
-      const { status, assetId, borrowerId } = req.query;
-      const userRole = req.user.role.name;
+      const { status, assetId, borrowerId, myLoans } = req.query;
+      const userRole = req.user?.role?.name;
 
       const where = {};
 
-      // Filter based on user role
-      if (userRole === "MEMBER") {
-        // Members can only see their own loans
+      // If myLoans=true, filter to current user's loans only
+      if (myLoans === "true") {
+        where.borrowerId = req.user.id;
+      } else if (!userRole || userRole === "MEMBER") {
+        // Members (or users without defined role) can only see their own loans
         where.borrowerId = req.user.id;
       }
 
@@ -27,7 +29,12 @@ module.exports = [
         where.assetId = parseInt(assetId);
       }
 
-      if (borrowerId && (userRole === "SUPER_ADMIN" || userRole === "ADMIN")) {
+      if (
+        borrowerId &&
+        (userRole === "SUPER_ADMIN" ||
+          userRole === "ADMIN" ||
+          userRole === "KOORDINATOR_INVENTARIS")
+      ) {
         where.borrowerId = parseInt(borrowerId);
       }
 

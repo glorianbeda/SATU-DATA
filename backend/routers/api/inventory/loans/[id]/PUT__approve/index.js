@@ -7,10 +7,9 @@ const prisma = new PrismaClient();
 
 module.exports = [
   authMiddleware,
-  checkRole(["SUPER_ADMIN", "ADMIN"]),
+  checkRole(["SUPER_ADMIN", "ADMIN", "KOORDINATOR_INVENTARIS"]),
   async (req, res) => {
     const { id } = req.params;
-    const { notes } = req.body;
 
     try {
       const loan = await prisma.loan.findUnique({
@@ -27,15 +26,23 @@ module.exports = [
 
       if (loan.status !== "PENDING") {
         return res.status(400).json({
-          error: `Loan cannot be rejected. Current status: ${loan.status}`,
+          error: `Loan cannot be approved. Current status: ${loan.status}`,
+        });
+      }
+
+      // Check if asset is still available
+      if (loan.asset.status !== "AVAILABLE") {
+        return res.status(400).json({
+          error: `Asset is not available. Current status: ${loan.asset.status}`,
         });
       }
 
       const updatedLoan = await prisma.loan.update({
         where: { id: parseInt(id) },
         data: {
-          status: "REJECTED",
-          notes: notes || loan.notes,
+          status: "APPROVED",
+          approvedDate: new Date(),
+          approvedById: req.user.id,
         },
         include: {
           asset: true,
@@ -50,7 +57,7 @@ module.exports = [
           loanId: loan.id,
           action: "STATUS_CHANGE",
           userId: req.user.id,
-          notes: `Loan rejected${notes ? `: ${notes}` : ""}`,
+          notes: "Loan approved",
         },
       });
 
@@ -60,13 +67,13 @@ module.exports = [
           loan.borrower.email,
           loan.borrower.name,
           loan.asset.name,
-          "REJECTED"
+          "APPROVED"
         );
       }
 
       res.json({ loan: updatedLoan });
     } catch (error) {
-      console.error("Reject loan error:", error);
+      console.error("Approve loan error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   },

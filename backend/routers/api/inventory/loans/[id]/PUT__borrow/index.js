@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 module.exports = [
   authMiddleware,
-  checkRole(["SUPER_ADMIN", "ADMIN"]),
+  checkRole(["SUPER_ADMIN", "ADMIN", "KOORDINATOR_INVENTARIS"]),
   async (req, res) => {
     const { id } = req.params;
 
