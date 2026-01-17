@@ -17,6 +17,7 @@ import {
   DialogActions,
   TextField,
   Fab,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,16 +28,20 @@ import { useTranslation } from 'react-i18next';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
 import { hasPermission } from '~/config/roles';
+import { useAlert } from '~/context/AlertContext';
 
 const CategoriesList = () => {
   const { t } = useTranslation();
+  const { showSuccess, showError } = useAlert();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dialog, setDialog] = useState({ open: false, category: null });
+  const [saving, setSaving] = useState(false);
+  const [dialog, setDialog] = useState({ open: false, category: null, mode: 'create' });
+  const [formData, setFormData] = useState({ name: '', code: '' });
 
-  const userRole = JSON.parse(localStorage.getItem('userRole') || '{}');
-
-  const canManageInventory = hasPermission(userRole, 'canManageInventory');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = user.role;
+  const canManageCategories = hasPermission(userRole, 'isSuperAdmin');
 
   const fetchCategories = async () => {
     try {
@@ -45,32 +50,62 @@ const CategoriesList = () => {
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      showError(t('common.error_loading_data'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreate = async (name, code) => {
+  const openDialog = (mode, category = null) => {
+    setFormData({
+      name: category?.name || '',
+      code: category?.code || '',
+    });
+    setDialog({ open: true, category, mode });
+  };
+
+  const closeDialog = () => {
+    setDialog({ open: false, category: null, mode: 'create' });
+    setFormData({ name: '', code: '' });
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim() || !formData.code.trim()) {
+      showError(t('inventory.fill_required_fields', 'Please fill all required fields'));
+      return;
+    }
+
+    setSaving(true);
     try {
-      await api.post(INVENTORY_API.CREATE_CATEGORY, { name, code });
-      showSuccess(t('inventory.category_created'));
+      if (dialog.mode === 'edit') {
+        await api.put(INVENTORY_API.UPDATE_CATEGORY(dialog.category.id), formData);
+        showSuccess(t('inventory.category_updated', 'Category updated successfully'));
+      } else {
+        await api.post(INVENTORY_API.CREATE_CATEGORY, formData);
+        showSuccess(t('inventory.category_created', 'Category created successfully'));
+      }
       fetchCategories();
-      setDialog({ open: false, category: null });
+      closeDialog();
     } catch (error) {
-      console.error('Error creating category:', error);
-      showError(t('inventory.error_creating_category'));
+      console.error('Error saving category:', error);
+      showError(t('inventory.error_saving_category', 'Failed to save category'));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    setSaving(true);
     try {
-      await api.delete(INVENTORY_API.DELETE_CATEGORY(id));
-      showSuccess(t('inventory.category_deleted'));
+      await api.delete(INVENTORY_API.DELETE_CATEGORY(dialog.category.id));
+      showSuccess(t('inventory.category_deleted', 'Category deleted successfully'));
       fetchCategories();
-      setDialog({ open: false, category: null });
+      closeDialog();
     } catch (error) {
       console.error('Error deleting category:', error);
-      showError(t('inventory.error_deleting_category'));
+      showError(t('inventory.error_deleting_category', 'Failed to delete category'));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -78,7 +113,7 @@ const CategoriesList = () => {
     fetchCategories();
   }, []);
 
-  if (!canManageInventory) {
+  if (!canManageCategories) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h6" color="error">
@@ -91,52 +126,56 @@ const CategoriesList = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        {t('inventory.category_management')}
+        {t('inventory.category_management', 'Category Management')}
       </Typography>
 
       <TableContainer component={Card}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t('inventory.name')}</TableCell>
-              <TableCell>{t('inventory.code')}</TableCell>
-              <TableCell>{t('inventory.created_at')}</TableCell>
-              <TableCell>{t('inventory.actions')}</TableCell>
+              <TableCell>{t('inventory.name', 'Name')}</TableCell>
+              <TableCell>{t('inventory.code', 'Code')}</TableCell>
+              <TableCell>{t('inventory.created_at', 'Created At')}</TableCell>
+              <TableCell width={120}>{t('common.actions', 'Actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  {t('inventory.loading')}
+                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                  <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  {t('inventory.no_categories')}
+                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                  {t('inventory.no_categories', 'No categories found')}
                 </TableCell>
               </TableRow>
             ) : (
               categories.map((cat) => (
                 <TableRow key={cat.id}>
                   <TableCell>{cat.name}</TableCell>
-                  <TableCell>{cat.code}</TableCell>
+                  <TableCell>
+                    <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">
+                      {cat.code}
+                    </code>
+                  </TableCell>
                   <TableCell>{new Date(cat.createdAt).toLocaleDateString('id-ID')}</TableCell>
                   <TableCell>
                     <IconButton
                       size="small"
                       color="primary"
-                      onClick={() => setDialog({ open: true, category: cat, mode: 'edit' })}
+                      onClick={() => openDialog('edit', cat)}
                     >
-                      <EditIcon />
+                      <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => setDialog({ open: true, category: cat, mode: 'delete' })}
+                      onClick={() => openDialog('delete', cat)}
                     >
-                      <DeleteIcon />
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -149,52 +188,68 @@ const CategoriesList = () => {
       <Fab
         color="primary"
         aria-label={t('inventory.add_category')}
-        onClick={() => setDialog({ open: true, category: null, mode: 'create' })}
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        onClick={() => openDialog('create')}
+        sx={{ position: 'fixed', bottom: 24, right: 24 }}
       >
         <AddIcon />
       </Fab>
 
-      <Dialog open={dialog.open} onClose={() => setDialog({ open: false, category: null })} maxWidth="sm">
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialog.open && dialog.mode !== 'delete'} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {dialog.mode === 'create' ? t('inventory.add_category') : t('inventory.edit_category')}
+          {dialog.mode === 'create' 
+            ? t('inventory.add_category', 'Add Category') 
+            : t('inventory.edit_category', 'Edit Category')}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            label={t('inventory.name')}
-            defaultValue={dialog.category?.name || ''}
-            inputRef={(input) => input && input.focus()}
-          />
-          <TextField
-            fullWidth
-            label={t('inventory.code')}
-            defaultValue={dialog.category?.code || ''}
-            sx={{ mt: 2 }}
-            disabled={dialog.mode === 'edit'}
-          />
+          <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              autoFocus
+              fullWidth
+              label={t('inventory.name', 'Name')}
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label={t('inventory.code', 'Code')}
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              required
+              disabled={dialog.mode === 'edit'}
+              helperText={dialog.mode === 'edit' ? t('inventory.code_cannot_change', 'Code cannot be changed') : ''}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialog({ open: false, category: null })}>
-            {t('inventory.cancel')}
+          <Button onClick={closeDialog} disabled={saving}>
+            {t('common.cancel')}
           </Button>
-          {dialog.mode === 'delete' ? (
-            <Button onClick={() => handleDelete(dialog.category.id)} color="error" variant="contained">
-              {t('inventory.delete')}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleCreate(
-                document.getElementById('category-name').value,
-                document.getElementById('category-code').value
-              )}
-              color="primary"
-              variant="contained"
-            >
-              {t('inventory.save')}
-            </Button>
-          )}
+          <Button onClick={handleSave} color="primary" variant="contained" disabled={saving}>
+            {saving ? <CircularProgress size={20} /> : t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={dialog.open && dialog.mode === 'delete'} onClose={closeDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('common.confirm_delete', 'Confirm Delete')}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {t('inventory.confirm_delete_category', 'Are you sure you want to delete this category?')}
+          </Typography>
+          <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+            {t('inventory.delete_category_warning', 'Assets in this category may be affected.')}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog} disabled={saving}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained" disabled={saving}>
+            {saving ? <CircularProgress size={20} /> : t('common.delete')}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
@@ -202,3 +257,4 @@ const CategoriesList = () => {
 };
 
 export default CategoriesList;
+

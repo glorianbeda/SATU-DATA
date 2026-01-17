@@ -30,7 +30,8 @@ const LoanHistory = () => {
   const [loans, setLoans] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const userRole = JSON.parse(localStorage.getItem('userRole') || '{}');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = user.role;
   const canViewAllLoans = hasPermission(userRole, 'canViewAllLoans');
 
   const fetchLoans = async () => {

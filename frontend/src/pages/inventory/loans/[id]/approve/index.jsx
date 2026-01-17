@@ -38,7 +38,8 @@ const ApprovalInterface = () => {
   const [loan, setLoan] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const userRole = JSON.parse(localStorage.getItem('userRole') || '{}');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = user.role;
   const canApproveLoans = hasPermission(userRole, 'canApproveLoans');
 
   const fetchLoan = async () => {

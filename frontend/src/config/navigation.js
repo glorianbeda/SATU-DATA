@@ -28,6 +28,7 @@ import {
   Inventory as InventoryIcon,
   Category as CategoryIcon,
   RequestPage as RequestIcon,
+  Storefront as StorefrontIcon,
 } from "@mui/icons-material";
 
 export const navigationConfig = {
@@ -250,10 +251,28 @@ export const navigationConfig = {
         permission: "canManageInventory",
       },
       {
-        id: "loan-requests",
-        labelKey: "sidebar.loan_requests",
+        id: "category-management",
+        labelKey: "sidebar.category_management",
+        icon: CategoryIcon,
+        path: "/inventory/categories",
+        permission: "isSuperAdmin",
+      },
+      {
+        id: "loan-management",
+        labelKey: "sidebar.loan_management",
         icon: RequestIcon,
         path: "/inventory/loans",
+        permission: "canManageInventory",
+      },
+      {
+        id: "inventory-shop",
+        labelKey: "sidebar.shop",
+        icon: StorefrontIcon,
+        path: "/inventory/shop",
+        badge: {
+          text: "New",
+          expiresAt: "2026-02-01",
+        },
       },
     ],
   },

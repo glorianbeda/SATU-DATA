@@ -17,21 +17,25 @@ import MainLayout from './components/MainLayout';
 
 // ...
 
+import { CartProvider } from './context/CartContext';
+
 function App() {
   return (
     <ThemeProvider>
       <MuiThemeProviderWrapper>
         <AlertProvider>
           <ConfirmationProvider>
-            <CssBaseline />
-            <Router>
-              <GlobalLoader />
-              <Suspense fallback={<PageLoader />}>
-                <MainLayout>
-                  <AppRoutes />
-                </MainLayout>
-              </Suspense>
-            </Router>
+            <CartProvider>
+              <CssBaseline />
+              <Router>
+                <GlobalLoader />
+                <Suspense fallback={<PageLoader />}>
+                  <MainLayout>
+                    <AppRoutes />
+                  </MainLayout>
+                </Suspense>
+              </Router>
+            </CartProvider>
           </ConfirmationProvider>
         </AlertProvider>
       </MuiThemeProviderWrapper>

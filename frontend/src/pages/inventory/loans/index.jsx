@@ -4,12 +4,6 @@ import {
   Typography,
   Button,
   Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Dialog,
   DialogTitle,
@@ -21,32 +15,39 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Fab,
   Tooltip,
-  Grid,
-  Paper,
 } from '@mui/material';
 import {
-  Add as AddIcon,
   Visibility as ViewIcon,
+  Check as ApproveIcon,
+  Close as RejectIcon,
+  Delete as DeleteIcon,
+  VerifiedUser as VerifyIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
 import { hasPermission } from '~/config/roles';
+import { useAlert } from '~/context/AlertContext';
+import DataTable from '~/components/DataTable/DataTable';
+import VerifyReturnDialog from '~/features/inventory/components/VerifyReturnDialog';
+import EditLoanDialog from '~/features/inventory/components/EditLoanDialog';
 
 const LoansList = () => {
   const { t } = useTranslation();
+  const { showSuccess, showError } = useAlert();
   const [loans, setLoans] = useState([]);
-  const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: '', search: '' });
-  const [requestDialog, setRequestDialog] = useState({ open: false, assetId: '' });
+  const [verifyDialog, setVerifyDialog] = useState({ open: false, loan: null });
+  const [rejectDialog, setRejectDialog] = useState({ open: false, loan: null, reason: '' });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, loan: null });
+  const [editDialog, setEditDialog] = useState({ open: false, loan: null });
 
-  const userRole = JSON.parse(localStorage.getItem('userRole') || '{}');
-  const isAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(userRole.name);
-  const canViewAllLoans = hasPermission(userRole, 'canViewAllLoans');
-  const canRequestLoans = hasPermission(userRole, 'canRequestLoans');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = user.role;
+  const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'KOORDINATOR_INVENTARIS'].includes(userRole?.name || userRole);
 
   const fetchLoans = async () => {
     try {
@@ -54,7 +55,7 @@ const LoansList = () => {
       const params = new URLSearchParams();
       if (filter.status) params.append('status', filter.status);
       if (filter.search) params.append('search', filter.search);
-
+      
       const response = await api.get(`${INVENTORY_API.GET_LOANS}?${params.toString()}`);
       setLoans(response.data.loans);
     } catch (error) {
@@ -64,65 +65,61 @@ const LoansList = () => {
     }
   };
 
-  const fetchAssets = async () => {
+  const handleApprove = async (loan) => {
     try {
-      const response = await api.get(`${INVENTORY_API.GET_ASSETS}?status=AVAILABLE`);
-      setAssets(response.data.assets);
+      await api.put(INVENTORY_API.APPROVE_LOAN(loan.id));
+      showSuccess(t('inventory.loan_approved'));
+      fetchLoans();
     } catch (error) {
-      console.error('Error fetching assets:', error);
+      showError(t('inventory.error_approving_loan', 'Failed to approve loan'));
     }
   };
 
-  const handleRequestLoan = async () => {
-    if (!requestDialog.assetId) {
-      alert(t('inventory.asset') + ' is required');
-      return;
-    }
-
+  const handleReject = async () => {
     try {
-      const response = await api.post(INVENTORY_API.CREATE_LOAN, {
-        assetId: parseInt(requestDialog.assetId),
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      await api.put(INVENTORY_API.REJECT_LOAN(rejectDialog.loan.id), {
+        reason: rejectDialog.reason,
       });
-
-      setLoans([response.data.loan, ...loans]);
-      setRequestDialog({ open: false, assetId: '' });
+      showSuccess(t('inventory.loan_rejected'));
+      setRejectDialog({ open: false, loan: null, reason: '' });
+      fetchLoans();
     } catch (error) {
-      console.error('Error requesting loan:', error);
-      alert(t('common.error'));
+      showError(t('inventory.error_rejecting_loan', 'Failed to reject loan'));
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(INVENTORY_API.DELETE_LOAN(deleteDialog.loan.id));
+      showSuccess(t('inventory.loan_deleted', 'Loan deleted'));
+      setDeleteDialog({ open: false, loan: null });
+      fetchLoans();
+    } catch (error) {
+      showError(t('inventory.error_deleting_loan', 'Failed to delete loan'));
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PENDING':
-        return 'info';
-      case 'APPROVED':
-        return 'warning';
-      case 'BORROWED':
-        return 'success';
-      case 'RETURNED':
-        return 'default';
-      case 'REJECTED':
-        return 'error';
-      case 'OVERDUE':
-        return 'error';
-      default:
-        return 'default';
+      case 'PENDING': return 'warning';
+      case 'APPROVED': return 'info';
+      case 'BORROWED': return 'primary';
+      case 'RETURN_VERIFICATION': return 'secondary';
+      case 'RETURNED': return 'success';
+      case 'REJECTED': return 'error';
+      case 'OVERDUE': return 'error';
+      default: return 'default';
     }
   };
 
   useEffect(() => {
     fetchLoans();
-    if (canRequestLoans) {
-      fetchAssets();
-    }
   }, [filter]);
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        {t('inventory.loan_requests')}
+        {t('inventory.loan_management', 'Kelola Peminjaman')}
       </Typography>
 
       {/* Filters */}
@@ -146,6 +143,7 @@ const LoansList = () => {
               <MenuItem value="PENDING">{t('inventory.pending')}</MenuItem>
               <MenuItem value="APPROVED">{t('inventory.approved')}</MenuItem>
               <MenuItem value="BORROWED">{t('inventory.borrowed')}</MenuItem>
+              <MenuItem value="RETURN_VERIFICATION">{t('inventory.return_verification')}</MenuItem>
               <MenuItem value="RETURNED">{t('inventory.returned')}</MenuItem>
               <MenuItem value="REJECTED">{t('inventory.rejected')}</MenuItem>
               <MenuItem value="OVERDUE">{t('inventory.overdue')}</MenuItem>
@@ -155,116 +153,208 @@ const LoansList = () => {
       </Card>
 
       {/* Loans Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t('inventory.asset')}</TableCell>
-              <TableCell>{t('inventory.borrower')}</TableCell>
-              <TableCell>{t('inventory.status')}</TableCell>
-              <TableCell>{t('inventory.request_date')}</TableCell>
-              <TableCell>{t('inventory.due_date')}</TableCell>
-              <TableCell align="right">{t('inventory.actions')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  {t('inventory.loading')}
-                </TableCell>
-              </TableRow>
-            ) : loans.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  {t('common.no_data')}
-                </TableCell>
-              </TableRow>
-            ) : (
-              loans.map((loan) => (
-                <TableRow key={loan.id}>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2">{loan.asset?.name || '-'}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        ({loan.asset?.assetCode || '-'})
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{loan.borrower?.name || '-'}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={t(`inventory.${loan.status.toLowerCase()}`)}
-                      color={getStatusColor(loan.status)}
+      <DataTable
+        title={t('inventory.loan_list', 'Daftar Peminjaman')}
+        columns={[
+          {
+            field: 'asset',
+            headerName: t('inventory.asset'),
+            renderCell: (row) => (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2">{row.asset?.name || '-'}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  ({row.asset?.assetCode || '-'})
+                </Typography>
+              </Box>
+            ),
+          },
+          {
+            field: 'borrower',
+            headerName: t('inventory.borrower'),
+            renderCell: (row) => row.borrower?.name || '-',
+          },
+          {
+            field: 'status',
+            headerName: t('inventory.status'),
+            renderCell: (row) => (
+              <Chip
+                label={t(`inventory.${row.status.toLowerCase()}`)}
+                color={getStatusColor(row.status)}
+                size="small"
+              />
+            ),
+          },
+          {
+            field: 'requestDate',
+            headerName: t('inventory.request_date'),
+            renderCell: (row) => new Date(row.requestDate).toLocaleDateString('id-ID'),
+          },
+          {
+            field: 'borrowDate',
+            headerName: t('inventory.borrow_date'),
+            renderCell: (row) => row.borrowDate ? new Date(row.borrowDate).toLocaleDateString('id-ID') : '-',
+          },
+          {
+            field: 'dueDate',
+            headerName: t('inventory.due_date'),
+            renderCell: (row) => {
+              if (!row.dueDate) return '-';
+              const dueDate = new Date(row.dueDate);
+              const isOverdue = dueDate < new Date() && !['RETURNED', 'REJECTED'].includes(row.status);
+              return (
+                <Typography
+                  variant="body2"
+                  color={isOverdue ? 'error' : 'inherit'}
+                  fontWeight={isOverdue ? 'bold' : 'normal'}
+                >
+                  {dueDate.toLocaleDateString('id-ID')}
+                </Typography>
+              );
+            },
+          },
+          {
+            field: 'actions',
+            headerName: t('inventory.actions'),
+            align: 'right',
+            renderCell: (row) => (
+              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                {/* Approve button for PENDING status - admin only */}
+                {isAdmin && row.status === 'PENDING' && (
+                  <Tooltip title={t('inventory.approve', 'Approve')}>
+                    <IconButton
                       size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(loan.requestDate).toLocaleDateString('id-ID')}
-                  </TableCell>
-                  <TableCell>
-                    {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString('id-ID') : '-'}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title={t('common.view')}>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => window.location.href = `/inventory/loans/${loan.id}`}
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                      color="success"
+                      onClick={() => handleApprove(row)}
+                    >
+                      <ApproveIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                
+                {/* Reject button for PENDING status - admin only */}
+                {isAdmin && row.status === 'PENDING' && (
+                  <Tooltip title={t('inventory.reject', 'Reject')}>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => setRejectDialog({ open: true, loan: row, reason: '' })}
+                    >
+                      <RejectIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                
+                {/* Verify button for RETURN_VERIFICATION status - admin only */}
+                {isAdmin && row.status === 'RETURN_VERIFICATION' && (
+                  <Tooltip title={t('inventory.verify')}>
+                    <IconButton
+                      size="small"
+                      color="warning"
+                      onClick={() => setVerifyDialog({ open: true, loan: row })}
+                    >
+                      <VerifyIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
 
-      {/* Request Loan Button */}
-      {canRequestLoans && (
-        <Fab
-          color="primary"
-          aria-label={t('inventory.request_loan')}
-          onClick={() => setRequestDialog({ open: true, assetId: '' })}
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
+                {/* View button - always visible */}
+                <Tooltip title={t('common.view')}>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={() => (window.location.href = `/inventory/loans/${row.id}`)}
+                  >
+                    <ViewIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
 
-      {/* Request Loan Dialog */}
-      <Dialog open={requestDialog.open} onClose={() => setRequestDialog({ open: false, assetId: '' })} maxWidth="sm">
-        <DialogTitle>{t('inventory.request_new_loan')}</DialogTitle>
+                {/* Edit button - Admin only */}
+                {isAdmin && (
+                  <Tooltip title={t('common.edit')}>
+                    <IconButton
+                      size="small"
+                      color="info"
+                      onClick={() => setEditDialog({ open: true, loan: row })}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                {/* Delete button - admin only for non-borrowed items */}
+                {isAdmin && !['BORROWED', 'RETURN_VERIFICATION'].includes(row.status) && (
+                  <Tooltip title={t('common.delete')}>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => setDeleteDialog({ open: true, loan: row })}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+            ),
+          },
+        ]}
+        data={loans}
+        loading={loading}
+        searchable={true}
+        pagination={true}
+        emptyMessage={t('common.no_data')}
+      />
+
+      {/* Verify Return Dialog */}
+      <VerifyReturnDialog 
+        open={verifyDialog.open}
+        onClose={() => setVerifyDialog({ open: false, loan: null })}
+        loan={verifyDialog.loan}
+        onSuccess={fetchLoans}
+      />
+
+      <EditLoanDialog 
+        open={editDialog.open}
+        onClose={() => setEditDialog({ open: false, loan: null })}
+        loan={editDialog.loan}
+        onSuccess={fetchLoans}
+      />
+
+      {/* Reject Loan Dialog */}
+      <Dialog open={rejectDialog.open} onClose={() => setRejectDialog({ open: false, loan: null, reason: '' })} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('inventory.reject_loan', 'Reject Loan')}</DialogTitle>
         <DialogContent>
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>{t('inventory.asset')}</InputLabel>
-            <Select
-              value={requestDialog.assetId}
-              onChange={(e) => setRequestDialog({ ...requestDialog, assetId: e.target.value })}
-              label={t('inventory.asset')}
-            >
-              <MenuItem value="">{t('common.select')}</MenuItem>
-              {assets.filter(a => a.status === 'AVAILABLE').map((asset) => (
-                <MenuItem key={asset.id} value={asset.id.toString()}>
-                  {asset.name} ({asset.assetCode})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label={t('inventory.rejection_reason')}
+            value={rejectDialog.reason}
+            onChange={(e) => setRejectDialog({ ...rejectDialog, reason: e.target.value })}
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRequestDialog({ open: false, assetId: '' })}>
+          <Button onClick={() => setRejectDialog({ open: false, loan: null, reason: '' })}>
             {t('common.cancel')}
           </Button>
-          <Button
-            onClick={handleRequestLoan}
-            variant="contained"
-            color="primary"
-          >
-            {t('inventory.request')}
+          <Button onClick={handleReject} color="error" variant="contained">
+            {t('inventory.reject', 'Reject')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, loan: null })} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('common.confirm_delete', 'Confirm Delete')}</DialogTitle>
+        <DialogContent>
+          <Typography>{t('inventory.confirm_delete_loan', 'Are you sure you want to delete this loan request?')}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog({ open: false, loan: null })}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            {t('common.delete')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -33,12 +33,57 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
     productivity: false,
     utilities: false,
     inventory: false,
+    pdf: false,
   });
   
   // Floating menu anchors (coordinates) for collapsed mode
   const [menuPositions, setMenuPositions] = useState({});
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  // Auto-expand menus based on current path
+  React.useEffect(() => {
+    if (isCollapsed) return;
+
+    // Check each section to see if one of its items is active
+    const checkAndExpand = (sectionId, items) => {
+      const hasActiveItem = items?.some(item => 
+        location.pathname === item.path || 
+        (item.path !== '/' && location.pathname.startsWith(item.path + '/'))
+      );
+      
+      if (hasActiveItem) {
+        setOpenMenus(prev => ({ ...prev, [sectionId]: true }));
+      }
+    };
+
+    // Check main sections
+    checkAndExpand('docs', navigationConfig.docs.items);
+    checkAndExpand('inventory', navigationConfig.inventory.items);
+    checkAndExpand('finance', navigationConfig.finance.items);
+    
+    // Check nested tools sections
+    navigationConfig.tools.subgroups?.forEach(subgroup => {
+      checkAndExpand(subgroup.id, subgroup.items);
+    });
+    
+  }, [location.pathname, isCollapsed]);
+
+  const isActive = (path) => {
+    // Exact match paths to avoid parent/child overlap highlight
+    const exactMatchPaths = [
+      '/inventory', 
+      '/dashboard', 
+      '/docs/request', 
+      '/docs/inbox',
+      '/inventory/loans' // Add this to prevent highlighting when in /inventory/loans/my-loans
+    ];
+    
+    if (exactMatchPaths.includes(path)) {
+      return location.pathname === path;
+    }
+    
+    // Default prefix matching
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   const toggleMenu = (menuId) => {
     setOpenMenus(prev => ({ ...prev, [menuId]: !prev[menuId] }));
@@ -72,7 +117,33 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
         <div className={`${isCollapsed ? '' : 'mr-3'} ${isActive(item.path) ? 'text-white' : (item.color || 'text-gray-400')}`}>
           <Icon />
         </div>
-        {!isCollapsed && <span className={`font-medium text-sm whitespace-nowrap ${!isActive(item.path) && item.color ? 'text-gray-700 dark:text-gray-300' : ''}`}>{text}</span>}
+        {!isCollapsed && (
+          <>
+            <span className={`font-medium text-sm leading-tight flex-1 ${!isActive(item.path) && item.color ? 'text-gray-700 dark:text-gray-300' : ''}`}>
+              {text}
+            </span>
+            {(() => {
+              if (!item.badge) return null;
+              
+              let badgeText = item.badge;
+              if (typeof item.badge === 'object') {
+                const { text, expiresAt } = item.badge;
+                if (expiresAt && new Date() > new Date(expiresAt)) return null;
+                badgeText = text;
+              }
+
+              return (
+                <span className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap flex-shrink-0 animate-pulse shadow-md backdrop-blur-sm ${
+                  isActive(item.path) 
+                    ? 'bg-blue-600/80 text-white shadow-blue-500/50' 
+                    : 'bg-red-500/80 text-white shadow-red-500/50'
+                }`}>
+                  {badgeText}
+                </span>
+              );
+            })()}
+          </>
+        )}
       </div>
     );
 
@@ -218,8 +289,18 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
         {/* Docs Section - Collapsible */}
         <CollapsibleSection sectionId="docs" section={navigationConfig.docs} />
 
-        {/* Inventory Section - Collapsible */}
-        <CollapsibleSection sectionId="inventory" section={navigationConfig.inventory} />
+        {/* Inventory Section - Collapsible, with item-level permissions */}
+        {(() => {
+          const filteredInventoryItems = navigationConfig.inventory.items.filter(
+            (item) => !item.permission || hasPermission(user.role, item.permission)
+          );
+          if (filteredInventoryItems.length === 0) return null;
+          const inventorySection = {
+            ...navigationConfig.inventory,
+            items: filteredInventoryItems,
+          };
+          return <CollapsibleSection sectionId="inventory" section={inventorySection} />;
+        })()}
 
         {/* Admin Section - Permission Required */}
         {hasPermission(user.role, navigationConfig.admin.permission) && (

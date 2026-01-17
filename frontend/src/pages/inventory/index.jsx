@@ -28,6 +28,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
+import BorrowingWorkflow from '~/features/inventory/components/BorrowingWorkflow';
 
 const PieChart = ({ data, colors, labels }) => {
   const total = data.reduce((sum, value) => sum + value, 0);
@@ -188,9 +189,17 @@ const InventoryDashboard = () => {
   };
 
   const StatCard = ({ icon: Icon, title, value, color, onClick }) => (
-    <Card sx={{ height: '100%' }} onClick={onClick}>
+    <Card 
+      sx={{ 
+        height: '100%', 
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': onClick ? { transform: 'translateY(-2px)', boxShadow: 4 } : {},
+      }} 
+      onClick={onClick}
+    >
       <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             sx={{
               width: 56,
@@ -199,14 +208,15 @@ const InventoryDashboard = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: color + '.light',
-              color: color + '.main',
+              bgcolor: `${color}.light`,
+              color: `${color}.main`,
+              flexShrink: 0,
             }}
           >
             <Icon sx={{ fontSize: 32 }} />
           </Box>
-          <Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="body2" color="text.secondary" noWrap>
               {title}
             </Typography>
             <Typography variant="h4" fontWeight="bold">
@@ -233,288 +243,231 @@ const InventoryDashboard = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            icon={InventoryIcon}
-            title={t('inventory.total_assets')}
-            value={stats.totalAssets}
-            color="primary"
-            onClick={() => window.location.href = '/inventory/assets'}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            icon={CheckCircle}
-            title={t('inventory.available')}
-            value={stats.available}
-            color="success"
-            onClick={() => window.location.href = '/inventory/assets?status=AVAILABLE'}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            icon={RequestIcon}
-            title={t('inventory.borrowed')}
-            value={stats.borrowed}
-            color="warning"
-            onClick={() => window.location.href = '/inventory/assets?status=BORROWED'}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            icon={TrendingDown}
-            title={t('inventory.maintenance')}
-            value={stats.maintenance}
-            color="error"
-            onClick={() => window.location.href = '/inventory/assets?status=MAINTENANCE'}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            icon={TrendingUp}
-            title={t('inventory.pending_requests')}
-            value={stats.pendingRequests}
-            color="info"
-            onClick={() => window.location.href = '/inventory/loans'}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            icon={TrendingDown}
-            title={t('inventory.overdue')}
-            value={stats.overdue}
-            color="error"
-            onClick={() => window.location.href = '/inventory/loans?status=OVERDUE'}
-          />
-        </Grid>
-      </Grid>
+        {/* Left Column: Stats, Charts, Activity */}
+        <Grid item xs={12} lg={8} xl={9}>
+          {/* Stats Grid */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                icon={InventoryIcon}
+                title={t('inventory.total_assets')}
+                value={stats.totalAssets}
+                color="primary"
+                onClick={() => window.location.href = '/inventory/assets'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                icon={CheckCircle}
+                title={t('inventory.available')}
+                value={stats.available}
+                color="success"
+                onClick={() => window.location.href = '/inventory/assets?status=AVAILABLE'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                icon={RequestIcon}
+                title={t('inventory.borrowed')}
+                value={stats.borrowed}
+                color="warning"
+                onClick={() => window.location.href = '/inventory/assets?status=BORROWED'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                icon={TrendingDown}
+                title={t('inventory.maintenance')}
+                value={stats.maintenance}
+                color="error"
+                onClick={() => window.location.href = '/inventory/assets?status=MAINTENANCE'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                icon={TrendingUp}
+                title={t('inventory.pending_requests')}
+                value={stats.pendingRequests}
+                color="info"
+                onClick={() => window.location.href = '/inventory/loans'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                icon={TrendingDown}
+                title={t('inventory.overdue')}
+                value={stats.overdue}
+                color="error"
+                onClick={() => window.location.href = '/inventory/loans?status=OVERDUE'}
+              />
+            </Grid>
+          </Grid>
 
-      <Paper elevation={3} sx={{ mt: 3, p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          {t('inventory.borrowing_workflow')}
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                bgcolor: 'primary.light',
-                color: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-              }}
-            >
-              1
-            </Box>
-            <Typography>{t('inventory.request')}</Typography>
-          </Box>
-          <Box sx={{ width: 30, height: 2, bgcolor: 'text.disabled' }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                bgcolor: 'warning.light',
-                color: 'warning.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-              }}
-            >
-              2
-            </Box>
-            <Typography>{t('inventory.approve')}</Typography>
-          </Box>
-          <Box sx={{ width: 30, height: 2, bgcolor: 'text.disabled' }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                bgcolor: 'success.light',
-                color: 'success.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-              }}
-            >
-              3
-            </Box>
-            <Typography>{t('inventory.borrow')}</Typography>
-          </Box>
-          <Box sx={{ width: 30, height: 2, bgcolor: 'text.disabled' }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                bgcolor: 'info.light',
-                color: 'info.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-              }}
-            >
-              4
-            </Box>
-            <Typography>{t('inventory.return')}</Typography>
-          </Box>
-        </Box>
-      </Paper>
-
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <PieChartIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">
-                {t('inventory.asset_status_distribution')}
-              </Typography>
-            </Box>
-            {stats.totalAssets > 0 ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Box sx={{ width: 200, height: 200 }}>
-                  <PieChart
-                    data={statusData}
-                    colors={statusColors}
-                    labels={statusLabels}
-                  />
+          {/* Charts Row */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={6}>
+              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <PieChartIcon sx={{ mr: 1 }} />
+                  <Typography variant="h6">
+                    {t('inventory.asset_status_distribution')}
+                  </Typography>
                 </Box>
-                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-                  {statusLabels.map((label, index) => (
-                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: statusColors[index] }} />
-                      <Typography variant="body2">
-                        {label}: {statusData[index]}
-                      </Typography>
+                {stats.totalAssets > 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Box sx={{ width: 180, height: 180 }}>
+                      <PieChart
+                        data={statusData}
+                        colors={statusColors}
+                        labels={statusLabels}
+                      />
                     </Box>
-                  ))}
-                </Box>
-              </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                {t('inventory.no_assets')}
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <InventoryIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">
-                {t('inventory.asset_category_distribution')}
-              </Typography>
-            </Box>
-            {categoryLabels.length > 0 ? (
-              <Box>
-                {categoryLabels.map((label, index) => {
-                  const percentage = Math.round((categoryValues[index] / stats.totalAssets) * 100);
-                  return (
-                    <Box key={index} sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography variant="body2">{label}</Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          {categoryValues[index]} ({percentage}%)
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          height: 8,
-                          bgcolor: 'grey.200',
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: '100%',
-                            width: `${percentage}%`,
-                            bgcolor: categoryColors[index % categoryColors.length],
-                            borderRadius: 4,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                {t('inventory.no_assets')}
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
-
-      <Paper elevation={3} sx={{ mt: 3, p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <HistoryIcon sx={{ mr: 1 }} />
-          <Typography variant="h6">
-            {t('inventory.recent_activity')}
-          </Typography>
-        </Box>
-        {recentActivity.length > 0 ? (
-          <List>
-            {recentActivity.slice(0, 10).map((activity, index) => (
-              <React.Fragment key={activity.id}>
-                <ListItem alignItems="flex-start">
-                  <Avatar sx={{ mr: 2, bgcolor: 'grey.200' }}>
-                    {getActionIcon(activity.action)}
-                  </Avatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" fontWeight="bold">
-                          {getActionLabel(activity.action)}
-                        </Typography>
-                        <Chip
-                          label={activity.action}
-                          size="small"
-                          color="default"
-                          variant="outlined"
-                        />
-                      </Box>
-                    }
-                    secondary={
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {activity.asset?.name || t('inventory.asset')}
-                        </Typography>
-                        {activity.notes && (
-                          <Typography variant="caption" color="text.secondary">
-                            {activity.notes}
+                    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+                      {statusLabels.map((label, index) => (
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: statusColors[index] }} />
+                          <Typography variant="caption">
+                            {label}: {statusData[index]}
                           </Typography>
-                        )}
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(activity.actionDate).toLocaleString('id-ID')}
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                </ListItem>
-                {index < Math.min(recentActivity.length, 10) - 1 && <Divider />}
-              </React.Fragment>
-            ))}
-          </List>
-        ) : (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-            {t('inventory.no_assets')}
-          </Typography>
-        )}
-      </Paper>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                    {t('inventory.no_assets')}
+                  </Typography>
+                )}
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <InventoryIcon sx={{ mr: 1 }} />
+                  <Typography variant="h6">
+                    {t('inventory.asset_category_distribution')}
+                  </Typography>
+                </Box>
+                {categoryLabels.length > 0 ? (
+                  <Box>
+                    {categoryLabels.map((label, index) => {
+                      const percentage = Math.round((categoryValues[index] / stats.totalAssets) * 100);
+                      return (
+                        <Box key={index} sx={{ mb: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="body2">{label}</Typography>
+                            <Typography variant="body2" fontWeight="bold">
+                              {categoryValues[index]} ({percentage}%)
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              height: 6,
+                              bgcolor: 'grey.200',
+                              borderRadius: 4,
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                height: '100%',
+                                width: `${percentage}%`,
+                                bgcolor: categoryColors[index % categoryColors.length],
+                                borderRadius: 4,
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                    {t('inventory.no_assets')}
+                  </Typography>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Recent Activity */}
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <HistoryIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">
+                {t('inventory.recent_activity')}
+              </Typography>
+            </Box>
+            {recentActivity.length > 0 ? (
+              <List disablePadding>
+                {recentActivity.slice(0, 5).map((activity, index) => (
+                  <React.Fragment key={activity.id}>
+                    <ListItem alignItems="center" disableGutters sx={{ py: 1 }}>
+                      <Avatar sx={{ mr: 2, bgcolor: 'background.default', width: 40, height: 40 }}>
+                        {getActionIcon(activity.action)}
+                      </Avatar>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="subtitle2" fontWeight="bold">
+                              {getActionLabel(activity.action)}
+                            </Typography>
+                            <Chip
+                              label={activity.action}
+                              size="small"
+                              variant="outlined"
+                              sx={{ height: 20, fontSize: '0.65rem' }}
+                            />
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                              {new Date(activity.actionDate).toLocaleString('id-ID')}
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+                            <Typography variant="body2" component="span" color="text.primary">
+                              {activity.asset?.name || t('inventory.asset')}
+                            </Typography>
+                            {activity.notes && (
+                                <Typography variant="caption" component="span" color="text.secondary" sx={{ display: 'block' }}>
+                                  — {activity.notes}
+                                </Typography>
+                            )}
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    {index < Math.min(recentActivity.length, 5) - 1 && <Divider component="li" />}
+                  </React.Fragment>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                {t('inventory.no_assets')}
+              </Typography>
+            )}
+            {recentActivity.length > 5 && (
+                 <Box sx={{ mt: 2, textAlign: 'center' }}>
+                    <Chip 
+                        label={t('inventory.show_more')} 
+                        onClick={() => {}} 
+                        icon={<ArrowForwardIcon />} 
+                        variant="outlined" 
+                        clickable 
+                    />
+                 </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Right Column: Workflow */}
+        <Grid item xs={12} lg={4} xl={3}>
+           <Paper elevation={3} sx={{ height: '100%', overflow: 'hidden' }}>
+             <BorrowingWorkflow sx={{ height: '100%', boxShadow: 'none', bgcolor: 'transparent' }} />
+           </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
