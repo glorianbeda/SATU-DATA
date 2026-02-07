@@ -14,8 +14,7 @@ class LabelService {
     const browser = await puppeteer.launch({
       headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      executablePath:
-        process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     });
 
     try {
