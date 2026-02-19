@@ -11,10 +11,10 @@ import {
   CircularProgress,
   Tabs,
   Tab,
-  Grid
 } from '@mui/material';
 import { Visibility as ViewIcon, History as HistoryIcon, Storefront as ShopIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
 import DataTable from '~/components/DataTable/DataTable';
@@ -46,10 +46,10 @@ const TabPanel = (props) => {
 
 const MyLoans = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
 
@@ -58,9 +58,8 @@ const MyLoans = () => {
       setLoading(true);
       const response = await api.get(`${INVENTORY_API.GET_LOANS}?myLoans=true`);
       setLoans(response.data.loans || []);
-    } catch (error) {
-      console.error('Error fetching my loans:', error);
-      setError(t('common.error'));
+    } catch {
+      console.error('Error fetching my loans:');
     } finally {
       setLoading(false);
     }
@@ -107,28 +106,40 @@ const MyLoans = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
         {t('inventory.loan_requests', 'Pinjam Asset')}
       </Typography>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="inventory tabs">
-          <Tab icon={<ShopIcon />} iconPosition="start" label={t('inventory.shop', 'Pinjam Asset')} />
-          <Tab icon={<HistoryIcon />} iconPosition="start" label={t('inventory.my_loans', 'Riwayat Peminjaman')} />
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          aria-label="inventory tabs"
+          variant="fullWidth"
+          scrollButtons="auto"
+          sx={{ 
+            '& .MuiTab-root': { 
+              minWidth: 'auto',
+              flex: { xs: 1, sm: 'initial' },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              px: { xs: 1, sm: 2 },
+            } 
+          }}
+        >
+          <Tab icon={<ShopIcon fontSize="small" />} iconPosition="start" label={t('inventory.shop', 'Pinjam')} />
+          <Tab icon={<HistoryIcon fontSize="small" />} iconPosition="start" label={t('inventory.my_loans', 'Riwayat')} />
         </Tabs>
       </Box>
 
       {/* SHOP TAB */}
       <TabPanel value={activeTab} index={0}>
-        <Grid container spacing={3}>
-            <Grid item xs={12} md={8} lg={9}>
-                 <AssetShop />
-            </Grid>
-            <Grid item xs={12} md={4} lg={3}>
-                <BorrowingWorkflow />
-            </Grid>
-        </Grid>
+        {/* Borrowing Workflow - Horizontal */}
+        <Box sx={{ mb: 3 }}>
+            <BorrowingWorkflow />
+        </Box>
+        
+        <AssetShop />
       </TabPanel>
 
       {/* MY LOANS TAB */}
@@ -157,12 +168,14 @@ const MyLoans = () => {
                         {
                         field: 'asset',
                         headerName: t('inventory.asset'),
+                        flex: 1,
+                        minWidth: 120,
                         renderCell: (row) => (
                             <Box>
-                            <Typography variant="body2" fontWeight="bold">
+                            <Typography variant="body2" fontWeight="500" noWrap>
                                 {row.asset?.name || '-'}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" noWrap>
                                 {row.asset?.assetCode || '-'}
                             </Typography>
                             </Box>
@@ -171,6 +184,7 @@ const MyLoans = () => {
                         {
                         field: 'status',
                         headerName: t('inventory.status'),
+                        width: 130,
                         renderCell: (row) => {
                             const overdue = isOverdue(row);
                             const displayStatus = overdue ? 'OVERDUE' : row.status;
@@ -188,17 +202,20 @@ const MyLoans = () => {
                         {
                         field: 'requestDate',
                         headerName: t('inventory.request_date'),
+                        width: 100,
                         renderCell: (row) => new Date(row.requestDate).toLocaleDateString('id-ID'),
                         },
                         {
                         field: 'borrowedDate',
                         headerName: t('inventory.borrow_date'),
+                        width: 100,
                         renderCell: (row) =>
                             row.borrowedDate ? new Date(row.borrowedDate).toLocaleDateString('id-ID') : '-',
                         },
                         {
                         field: 'dueDate',
                         headerName: t('inventory.due_date'),
+                        width: 100,
                         renderCell: (row) => {
                             if (!row.dueDate) return '-';
                             const dueDate = new Date(row.dueDate);
@@ -218,9 +235,10 @@ const MyLoans = () => {
                         {
                         field: 'actions',
                         headerName: t('inventory.actions'),
+                        width: 100,
                         align: 'right',
                         renderCell: (row) => (
-                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                             {(row.status === 'BORROWED') && (
                                     <Tooltip title={t('inventory.return')}>
                                     <IconButton
@@ -236,7 +254,7 @@ const MyLoans = () => {
                                 <IconButton
                                 size="small"
                                 color="primary"
-                                onClick={() => (window.location.href = `/inventory/loans/${row.id}`)}
+                                onClick={() => navigate(`/inventory/loans/${row.id}`)}
                                 >
                                 <ViewIcon fontSize="small" />
                                 </IconButton>

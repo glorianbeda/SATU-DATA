@@ -19,11 +19,13 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
 
 const BarcodeScanner = ({ open, onClose }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [assetCode, setAssetCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -82,7 +84,8 @@ const BarcodeScanner = ({ open, onClose }) => {
 
   const handleViewAsset = () => {
     if (asset) {
-      window.location.href = `/inventory/assets/${asset.id}`;
+      navigate(`/inventory/assets/${asset.id}`);
+      handleClose();
     }
   };
 

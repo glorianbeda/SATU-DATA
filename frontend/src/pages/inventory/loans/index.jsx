@@ -26,9 +26,9 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
-import { hasPermission } from '~/config/roles';
 import { useAlert } from '~/context/AlertContext';
 import DataTable from '~/components/DataTable/DataTable';
 import VerifyReturnDialog from '~/features/inventory/components/VerifyReturnDialog';
@@ -36,6 +36,7 @@ import EditLoanDialog from '~/features/inventory/components/EditLoanDialog';
 
 const LoansList = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { showSuccess, showError } = useAlert();
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,8 +59,8 @@ const LoansList = () => {
       
       const response = await api.get(`${INVENTORY_API.GET_LOANS}?${params.toString()}`);
       setLoans(response.data.loans);
-    } catch (error) {
-      console.error('Error fetching loans:', error);
+    } catch {
+      console.error('Error fetching loans:');
     } finally {
       setLoading(false);
     }
@@ -70,7 +71,7 @@ const LoansList = () => {
       await api.put(INVENTORY_API.APPROVE_LOAN(loan.id));
       showSuccess(t('inventory.loan_approved'));
       fetchLoans();
-    } catch (error) {
+    } catch {
       showError(t('inventory.error_approving_loan', 'Failed to approve loan'));
     }
   };
@@ -83,7 +84,7 @@ const LoansList = () => {
       showSuccess(t('inventory.loan_rejected'));
       setRejectDialog({ open: false, loan: null, reason: '' });
       fetchLoans();
-    } catch (error) {
+    } catch {
       showError(t('inventory.error_rejecting_loan', 'Failed to reject loan'));
     }
   };
@@ -94,7 +95,7 @@ const LoansList = () => {
       showSuccess(t('inventory.loan_deleted', 'Loan deleted'));
       setDeleteDialog({ open: false, loan: null });
       fetchLoans();
-    } catch (error) {
+    } catch {
       showError(t('inventory.error_deleting_loan', 'Failed to delete loan'));
     }
   };
@@ -117,22 +118,22 @@ const LoansList = () => {
   }, [filter]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
         {t('inventory.loan_management', 'Kelola Peminjaman')}
       </Typography>
 
       {/* Filters */}
-      <Card sx={{ mb: 3 }}>
-        <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <Card sx={{ mb: 3, p: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             placeholder={t('common.search')}
             value={filter.search}
             onChange={(e) => setFilter({ ...filter, search: e.target.value })}
             size="small"
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: 150, flexGrow: 1, maxWidth: 300 }}
           />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
+          <FormControl size="small" sx={{ minWidth: 130 }}>
             <InputLabel>{t('inventory.status')}</InputLabel>
             <Select
               value={filter.status}
@@ -159,10 +160,12 @@ const LoansList = () => {
           {
             field: 'asset',
             headerName: t('inventory.asset'),
+            flex: 1,
+            minWidth: 120,
             renderCell: (row) => (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2">{row.asset?.name || '-'}</Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>{row.asset?.name || '-'}</Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
                   ({row.asset?.assetCode || '-'})
                 </Typography>
               </Box>
@@ -171,11 +174,14 @@ const LoansList = () => {
           {
             field: 'borrower',
             headerName: t('inventory.borrower'),
+            flex: 1,
+            minWidth: 100,
             renderCell: (row) => row.borrower?.name || '-',
           },
           {
             field: 'status',
             headerName: t('inventory.status'),
+            width: 130,
             renderCell: (row) => (
               <Chip
                 label={t(`inventory.${row.status.toLowerCase()}`)}
@@ -187,16 +193,19 @@ const LoansList = () => {
           {
             field: 'requestDate',
             headerName: t('inventory.request_date'),
+            width: 100,
             renderCell: (row) => new Date(row.requestDate).toLocaleDateString('id-ID'),
           },
           {
             field: 'borrowDate',
             headerName: t('inventory.borrow_date'),
+            width: 100,
             renderCell: (row) => row.borrowDate ? new Date(row.borrowDate).toLocaleDateString('id-ID') : '-',
           },
           {
             field: 'dueDate',
             headerName: t('inventory.due_date'),
+            width: 100,
             renderCell: (row) => {
               if (!row.dueDate) return '-';
               const dueDate = new Date(row.dueDate);
@@ -215,6 +224,7 @@ const LoansList = () => {
           {
             field: 'actions',
             headerName: t('inventory.actions'),
+            width: 120,
             align: 'right',
             renderCell: (row) => (
               <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
@@ -262,7 +272,7 @@ const LoansList = () => {
                   <IconButton
                     size="small"
                     color="primary"
-                    onClick={() => (window.location.href = `/inventory/loans/${row.id}`)}
+                    onClick={() => navigate(`/inventory/loans/${row.id}`)}
                   >
                     <ViewIcon fontSize="small" />
                   </IconButton>

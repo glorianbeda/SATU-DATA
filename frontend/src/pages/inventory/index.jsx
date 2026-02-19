@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
-  Grid,
   Paper,
   CircularProgress,
   List,
@@ -15,7 +12,6 @@ import {
   Avatar,
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
   Inventory as InventoryIcon,
   RequestPage as RequestIcon,
   TrendingUp,
@@ -24,72 +20,147 @@ import {
   PieChart as PieChartIcon,
   History as HistoryIcon,
   ArrowForward as ArrowForwardIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { PieChart, BarChart } from '~/components/charts';
 import api from '~/utils/api';
 import { INVENTORY_API } from '~/features/inventory/constants';
 import BorrowingWorkflow from '~/features/inventory/components/BorrowingWorkflow';
 
-const PieChart = ({ data, colors, labels }) => {
-  const total = data.reduce((sum, value) => sum + value, 0);
-  let currentAngle = 0;
+// Gradient Stat Card Component - Modern Design
+const StatCard = ({ icon: IconComponent, title, value, gradient, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`
+      ${gradient} 
+      p-5 rounded-2xl shadow-lg text-white 
+      cursor-pointer transition-all duration-300
+      hover:-translate-y-1 hover:shadow-xl
+      relative overflow-hidden
+    `}
+  >
+    {/* Decorative circles */}
+    <div className="absolute -top-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+    <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-white/10 rounded-full blur-lg"></div>
+    
+    <div className="relative z-10">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`
+          w-12 h-12 rounded-xl 
+          bg-white/20 backdrop-blur-sm 
+          flex items-center justify-center
+        `}>
+          {IconComponent && <IconComponent sx={{ fontSize: 24 }} />}
+        </div>
+        <ArrowForwardIcon sx={{ opacity: 0.6, fontSize: 20 }} />
+      </div>
+      
+      <Typography variant="h3" fontWeight="bold" className="mb-1">
+        {value}
+      </Typography>
+      
+      <Typography 
+        variant="body2" 
+        className="text-white/80 font-medium uppercase tracking-wide text-xs"
+      >
+        {title}
+      </Typography>
+    </div>
+  </div>
+);
 
-  const slices = data.map((value, index) => {
-    const angle = (value / total) * 360;
-    const slice = (
-      <g key={index}>
-        <path
-          d={describeArc(100, 100, 80, currentAngle, currentAngle + angle)}
-          fill={colors[index]}
-          stroke="#fff"
-          strokeWidth="2"
-        />
-        <text
-          x={100 + 50 * Math.cos((currentAngle + angle / 2) * Math.PI / 180)}
-          y={100 + 50 * Math.sin((currentAngle + angle / 2) * Math.PI / 180)}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#fff"
-          fontSize="12"
-          fontWeight="bold"
-        >
-          {Math.round((value / total) * 100)}%
-        </text>
-      </g>
-    );
-    currentAngle += angle;
-    return slice;
-  });
+// Modern Chart Card
+const ChartCard = ({ title, icon: IconComponent, children }) => (
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-300 h-full">
+    <div className="flex items-center gap-2 mb-4">
+      {IconComponent && <IconComponent className="text-blue-500" />}
+      <Typography variant="h6" fontWeight="600" className="text-gray-800 dark:text-white">
+        {title}
+      </Typography>
+    </div>
+    {children}
+  </div>
+);
+
+// Modern Activity Item
+const ActivityItem = ({ activity, getActionIcon, getActionLabel, isLast, t }) => {
+  const getGradientForAction = (action) => {
+    switch (action) {
+      case 'BORROWED':
+        return 'from-orange-500 to-orange-600';
+      case 'RETURNED':
+        return 'from-green-500 to-green-600';
+      case 'MAINTENANCE':
+        return 'from-red-500 to-red-600';
+      case 'DAMAGED':
+        return 'from-red-600 to-red-700';
+      case 'STATUS_CHANGE':
+        return 'from-blue-500 to-blue-600';
+      default:
+        return 'from-gray-500 to-gray-600';
+    }
+  };
+
+  const gradient = getGradientForAction(activity.action);
 
   return (
-    <svg viewBox="0 0 200 200" width="100%" height="100%">
-      {slices}
-    </svg>
+    <>
+      <div className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl p-3 transition-colors duration-200 -mx-2">
+        <div className="flex items-start gap-3">
+          <div className={`
+            w-10 h-10 rounded-xl 
+            bg-gradient-to-br ${gradient}
+            flex items-center justify-center flex-shrink-0
+            text-white shadow-md
+          `}>
+            {getActionIcon(activity.action)}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Typography variant="subtitle2" fontWeight="bold" className="text-gray-800 dark:text-white">
+                {getActionLabel(activity.action)}
+              </Typography>
+              <span className={`
+                px-2 py-0.5 rounded-full text-xs font-semibold
+                bg-gradient-to-r ${gradient}
+                text-white
+              `}>
+                {activity.action}
+              </span>
+            </div>
+            
+            <Typography variant="body2" className="text-gray-600 dark:text-gray-300 mt-0.5">
+              {activity.asset?.name || t('inventory.asset')}
+            </Typography>
+            
+            {activity.notes && (
+              <Typography variant="caption" className="text-gray-500 dark:text-gray-400 block mt-0.5">
+                — {activity.notes}
+              </Typography>
+            )}
+          </div>
+          
+          <Typography variant="caption" className="text-gray-400 dark:text-gray-500 whitespace-nowrap">
+            {new Date(activity.actionDate).toLocaleString('id-ID', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </Typography>
+        </div>
+      </div>
+      {!isLast && <Divider className="my-1" />}
+    </>
   );
-};
-
-const describeArc = (x, y, radius, startAngle, endAngle) => {
-  const start = polarToCartesian(x, y, radius, endAngle);
-  const end = polarToCartesian(x, y, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-  return [
-    "M", x, y,
-    "L", start.x, start.y,
-    "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
-    "Z"
-  ].join(" ");
-};
-
-const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
-  const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
-  return {
-    x: centerX + (radius * Math.cos(angleInRadians)),
-    y: centerY + (radius * Math.sin(angleInRadians))
-  };
 };
 
 const InventoryDashboard = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalAssets: 0,
     available: 0,
@@ -148,26 +219,25 @@ const InventoryDashboard = () => {
 
   const categoryLabels = Object.keys(categoryData);
   const categoryValues = Object.values(categoryData);
-  const categoryColors = ['#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#c2185b', '#0097a7'];
 
   const statusData = [stats.available, stats.borrowed, stats.maintenance, stats.lost];
   const statusLabels = [t('inventory.available'), t('inventory.borrowed'), t('inventory.maintenance'), t('inventory.lost')];
-  const statusColors = ['#2e7d32', '#ed6c02', '#d32f2f', '#d32f2f'];
+  const statusColors = ['#10b981', '#f59e0b', '#ef4444', '#dc2626'];
 
   const getActionIcon = (action) => {
     switch (action) {
       case 'BORROWED':
-        return <RequestIcon color="primary" />;
+        return <RequestIcon sx={{ fontSize: 18 }} />;
       case 'RETURNED':
-        return <CheckCircle color="success" />;
+        return <CheckCircle sx={{ fontSize: 18 }} />;
       case 'MAINTENANCE':
-        return <TrendingDown color="error" />;
+        return <TrendingDown sx={{ fontSize: 18 }} />;
       case 'DAMAGED':
-        return <TrendingDown color="error" />;
+        return <WarningIcon sx={{ fontSize: 18 }} />;
       case 'STATUS_CHANGE':
-        return <HistoryIcon color="info" />;
+        return <HistoryIcon sx={{ fontSize: 18 }} />;
       default:
-        return <HistoryIcon />;
+        return <HistoryIcon sx={{ fontSize: 18 }} />;
     }
   };
 
@@ -188,286 +258,195 @@ const InventoryDashboard = () => {
     }
   };
 
-  const StatCard = ({ icon: Icon, title, value, color, onClick }) => (
-    <Card 
-      sx={{ 
-        height: '100%', 
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': onClick ? { transform: 'translateY(-2px)', boxShadow: 4 } : {},
-      }} 
-      onClick={onClick}
-    >
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: `${color}.light`,
-              color: `${color}.main`,
-              flexShrink: 0,
-            }}
-          >
-            <Icon sx={{ fontSize: 32 }} />
-          </Box>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="body2" color="text.secondary" noWrap>
-              {title}
-            </Typography>
-            <Typography variant="h4" fontWeight="bold">
-              {value}
-            </Typography>
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-
   if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography>{t('inventory.loading')}</Typography>
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+        <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {t('inventory.inventory_dashboard')}
-      </Typography>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      {/* Header Section */}
+      <div className="mb-6">
+        <Typography 
+          variant="h5" 
+          gutterBottom 
+          sx={{ fontWeight: 600, mb: 1 }}
+          className="text-gray-800 dark:text-white"
+        >
+          {t('inventory.inventory_dashboard')}
+        </Typography>
+        <Typography variant="body2" className="text-gray-500 dark:text-gray-400">
+          {new Date().toLocaleDateString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </Typography>
+      </div>
 
-      <Grid container spacing={3}>
-        {/* Left Column: Stats, Charts, Activity */}
-        <Grid item xs={12} lg={8} xl={9}>
-          {/* Stats Grid */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={4}>
-              <StatCard
-                icon={InventoryIcon}
-                title={t('inventory.total_assets')}
-                value={stats.totalAssets}
-                color="primary"
-                onClick={() => window.location.href = '/inventory/assets'}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <StatCard
-                icon={CheckCircle}
-                title={t('inventory.available')}
-                value={stats.available}
-                color="success"
-                onClick={() => window.location.href = '/inventory/assets?status=AVAILABLE'}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <StatCard
-                icon={RequestIcon}
-                title={t('inventory.borrowed')}
-                value={stats.borrowed}
-                color="warning"
-                onClick={() => window.location.href = '/inventory/assets?status=BORROWED'}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <StatCard
-                icon={TrendingDown}
-                title={t('inventory.maintenance')}
-                value={stats.maintenance}
-                color="error"
-                onClick={() => window.location.href = '/inventory/assets?status=MAINTENANCE'}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <StatCard
-                icon={TrendingUp}
-                title={t('inventory.pending_requests')}
-                value={stats.pendingRequests}
-                color="info"
-                onClick={() => window.location.href = '/inventory/loans'}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <StatCard
-                icon={TrendingDown}
-                title={t('inventory.overdue')}
-                value={stats.overdue}
-                color="error"
-                onClick={() => window.location.href = '/inventory/loans?status=OVERDUE'}
-              />
-            </Grid>
-          </Grid>
+      {/* Stats Grid - 6 cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <StatCard
+          icon={InventoryIcon}
+          title={t('inventory.total_assets')}
+          value={stats.totalAssets}
+          gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+          onClick={() => navigate('/inventory/assets')}
+        />
+        <StatCard
+          icon={CheckCircle}
+          title={t('inventory.available')}
+          value={stats.available}
+          gradient="bg-gradient-to-br from-green-500 to-green-600"
+          onClick={() => navigate('/inventory/assets?status=AVAILABLE')}
+        />
+        <StatCard
+          icon={RequestIcon}
+          title={t('inventory.borrowed')}
+          value={stats.borrowed}
+          gradient="bg-gradient-to-br from-orange-500 to-orange-600"
+          onClick={() => navigate('/inventory/assets?status=BORROWED')}
+        />
+        <StatCard
+          icon={TrendingDown}
+          title={t('inventory.maintenance')}
+          value={stats.maintenance}
+          gradient="bg-gradient-to-br from-red-500 to-red-600"
+          onClick={() => navigate('/inventory/assets?status=MAINTENANCE')}
+        />
+        <StatCard
+          icon={TrendingUp}
+          title={t('inventory.pending_requests')}
+          value={stats.pendingRequests}
+          gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+          onClick={() => navigate('/inventory/loans')}
+        />
+        <StatCard
+          icon={WarningIcon}
+          title={t('inventory.overdue')}
+          value={stats.overdue}
+          gradient="bg-gradient-to-br from-red-600 to-red-700"
+          onClick={() => navigate('/inventory/loans?status=OVERDUE')}
+        />
+      </div>
 
-          {/* Charts Row */}
-          <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={6}>
-              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PieChartIcon sx={{ mr: 1 }} />
-                  <Typography variant="h6">
-                    {t('inventory.asset_status_distribution')}
-                  </Typography>
-                </Box>
-                {stats.totalAssets > 0 ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Box sx={{ width: 180, height: 180 }}>
-                      <PieChart
-                        data={statusData}
-                        colors={statusColors}
-                        labels={statusLabels}
-                      />
-                    </Box>
-                    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-                      {statusLabels.map((label, index) => (
-                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: statusColors[index] }} />
-                          <Typography variant="caption">
-                            {label}: {statusData[index]}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    {t('inventory.no_assets')}
-                  </Typography>
-                )}
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <InventoryIcon sx={{ mr: 1 }} />
-                  <Typography variant="h6">
-                    {t('inventory.asset_category_distribution')}
-                  </Typography>
-                </Box>
-                {categoryLabels.length > 0 ? (
-                  <Box>
-                    {categoryLabels.map((label, index) => {
-                      const percentage = Math.round((categoryValues[index] / stats.totalAssets) * 100);
-                      return (
-                        <Box key={index} sx={{ mb: 2 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                            <Typography variant="body2">{label}</Typography>
-                            <Typography variant="body2" fontWeight="bold">
-                              {categoryValues[index]} ({percentage}%)
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              height: 6,
-                              bgcolor: 'grey.200',
-                              borderRadius: 4,
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                height: '100%',
-                                width: `${percentage}%`,
-                                bgcolor: categoryColors[index % categoryColors.length],
-                                borderRadius: 4,
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    {t('inventory.no_assets')}
-                  </Typography>
-                )}
-              </Paper>
-            </Grid>
-          </Grid>
-
-          {/* Recent Activity */}
-          <Paper elevation={3} sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <HistoryIcon sx={{ mr: 1 }} />
-              <Typography variant="h6">
-                {t('inventory.recent_activity')}
-              </Typography>
-            </Box>
-            {recentActivity.length > 0 ? (
-              <List disablePadding>
-                {recentActivity.slice(0, 5).map((activity, index) => (
-                  <React.Fragment key={activity.id}>
-                    <ListItem alignItems="center" disableGutters sx={{ py: 1 }}>
-                      <Avatar sx={{ mr: 2, bgcolor: 'background.default', width: 40, height: 40 }}>
-                        {getActionIcon(activity.action)}
-                      </Avatar>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                            <Typography variant="subtitle2" fontWeight="bold">
-                              {getActionLabel(activity.action)}
-                            </Typography>
-                            <Chip
-                              label={activity.action}
-                              size="small"
-                              variant="outlined"
-                              sx={{ height: 20, fontSize: '0.65rem' }}
-                            />
-                            <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
-                              {new Date(activity.actionDate).toLocaleString('id-ID')}
-                            </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
-                            <Typography variant="body2" component="span" color="text.primary">
-                              {activity.asset?.name || t('inventory.asset')}
-                            </Typography>
-                            {activity.notes && (
-                                <Typography variant="caption" component="span" color="text.secondary" sx={{ display: 'block' }}>
-                                  — {activity.notes}
-                                </Typography>
-                            )}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    {index < Math.min(recentActivity.length, 5) - 1 && <Divider component="li" />}
-                  </React.Fragment>
-                ))}
-              </List>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+        {/* Status Distribution Pie Chart */}
+        <ChartCard 
+          title={t('inventory.asset_status_distribution')}
+          icon={PieChartIcon}
+        >
+          {stats.totalAssets > 0 ? (
+            <div className="h-64">
+              <PieChart
+                labels={statusLabels}
+                series={statusData}
+                colors={statusColors}
+                showLegend={true}
+                legendPosition="bottom"
+                height="100%"
+              />
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center">
+              <Typography variant="body2" color="text.secondary">
                 {t('inventory.no_assets')}
               </Typography>
-            )}
-            {recentActivity.length > 5 && (
-                 <Box sx={{ mt: 2, textAlign: 'center' }}>
-                    <Chip 
-                        label={t('inventory.show_more')} 
-                        onClick={() => {}} 
-                        icon={<ArrowForwardIcon />} 
-                        variant="outlined" 
-                        clickable 
-                    />
-                 </Box>
-            )}
-          </Paper>
-        </Grid>
+            </div>
+          )}
+        </ChartCard>
 
-        {/* Right Column: Workflow */}
-        <Grid item xs={12} lg={4} xl={3}>
-           <Paper elevation={3} sx={{ height: '100%', overflow: 'hidden' }}>
-             <BorrowingWorkflow sx={{ height: '100%', boxShadow: 'none', bgcolor: 'transparent' }} />
-           </Paper>
-        </Grid>
-      </Grid>
+        {/* Category Distribution Bar Chart */}
+        <ChartCard 
+          title={t('inventory.asset_category_distribution')}
+          icon={InventoryIcon}
+        >
+          {categoryLabels.length > 0 ? (
+            <div className="h-64">
+              <BarChart
+                categories={categoryLabels.slice(0, 5)}
+                series={[
+                  {
+                    name: 'Assets',
+                    data: categoryValues.slice(0, 5),
+                    color: '#3b82f6',
+                  }
+                ]}
+                horizontal={true}
+                showLegend={false}
+                height="100%"
+              />
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center">
+              <Typography variant="body2" color="text.secondary">
+                {t('inventory.no_assets')}
+              </Typography>
+            </div>
+          )}
+        </ChartCard>
+      </div>
+
+      {/* Bottom Row - Activity & Workflow */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Recent Activity - 2/3 width */}
+        <div className="lg:col-span-2">
+          <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 h-full min-h-[400px] transition-colors duration-300 flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
+              <HistoryIcon className="text-blue-500" />
+              <Typography variant="h6" fontWeight="600" className="text-gray-800 dark:text-white">
+                {t('inventory.recent_activity')}
+              </Typography>
+            </div>
+            
+            {recentActivity.length > 0 ? (
+              <div className="space-y-1 flex-1 overflow-auto">
+                {recentActivity.slice(0, 5).map((activity, index) => (
+                  <ActivityItem
+                    key={activity.id}
+                    activity={activity}
+                    getActionIcon={getActionIcon}
+                    getActionLabel={getActionLabel}
+                    isLast={index === Math.min(recentActivity.length, 5) - 1}
+                    t={t}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center flex-1 flex items-center justify-center">
+                <Typography variant="body2" color="text.secondary">
+                  {t('inventory.no_assets')}
+                </Typography>
+              </div>
+            )}
+            
+            {recentActivity.length > 5 && (
+              <div className="mt-4 text-center">
+                <Chip 
+                  label={t('inventory.show_more')} 
+                  onClick={() => {}} 
+                  icon={<ArrowForwardIcon />} 
+                  variant="outlined" 
+                  clickable 
+                  className="border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Borrowing Workflow - 1/3 width */}
+        <div className="lg:col-span-1">
+          <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 h-full min-h-[400px] transition-colors duration-300 flex flex-col">
+            <BorrowingWorkflow sx={{ height: '100%', boxShadow: 'none', bgcolor: 'transparent', flex: 1 }} />
+          </div>
+        </div>
+      </div>
     </Box>
   );
 };

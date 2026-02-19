@@ -11,7 +11,9 @@ export const INVENTORY_API = {
   CREATE_ASSET: "/api/inventory/assets",
   UPDATE_ASSET: (id) => `/api/inventory/assets/${id}`,
   DELETE_ASSET: (id) => `/api/inventory/assets/${id}`,
+  UPLOAD_ASSET_IMAGE: "/api/inventory/assets/upload-image",
   GENERATE_BARCODE: (id) => `/api/inventory/assets/${id}/generate-barcode`,
+  REGENERATE_BARCODE: (id) => `/api/inventory/assets/${id}/regenerate-barcode`,
   REGENERATE_QR: (id) => `/api/inventory/assets/${id}/regenerate-qr`,
   GENERATE_LABELS: "/api/inventory/labels/generate",
 
@@ -30,4 +32,5 @@ export const INVENTORY_API = {
   // History
   GET_ASSET_HISTORY: (id) => `/api/inventory/history/asset/${id}`,
   GET_USER_HISTORY: (id) => `/api/inventory/history/user/${id}`,
+  GET_HISTORY_USER: "/api/inventory/history/user",
 };
