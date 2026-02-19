@@ -19,6 +19,7 @@ export const ROLE_PERMISSIONS = {
     canRequestLoans: true,
   },
   [ROLES.ADMIN]: {
+    isSuperAdmin: false,
     canManageUsers: false,
     canManageFinance: true,
     canSignDocs: true,
@@ -30,6 +31,7 @@ export const ROLE_PERMISSIONS = {
     canRequestLoans: true,
   },
   [ROLES.KOORDINATOR_INVENTARIS]: {
+    isSuperAdmin: false,
     canManageUsers: false,
     canManageFinance: false,
     canSignDocs: false,
@@ -41,6 +43,7 @@ export const ROLE_PERMISSIONS = {
     canRequestLoans: true,
   },
   [ROLES.MEMBER]: {
+    isSuperAdmin: false,
     canManageUsers: false,
     canManageFinance: false,
     canSignDocs: false,

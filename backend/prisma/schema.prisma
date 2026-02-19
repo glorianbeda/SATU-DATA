@@ -45,6 +45,8 @@ model User {
   borrowedLoans      Loan[]              @relation("Borrower")
   approvedLoans      Loan[]              @relation("LoanApprover")
   assetLogs         AssetLog[]          @relation("LogCreator")
+  reimbursementRequests Reimbursement[]   @relation("ReimbursementUser")
+  approvedReimbursements Reimbursement[]  @relation("ReimbursementApprover")
 
   @@index([roleId], map: "User_roleId_fkey")
 }
@@ -374,4 +376,28 @@ model AssetLog {
 
   @@index([assetId])
   @@index([actionDate])
+}
+
+model Reimbursement {
+  id                  Int       @id @default(autoincrement())
+  userId              Int
+  amount              Float
+  evidenceImage       String?   @db.Text
+  disbursementMethod  String    // CASH, BANK, CASHLESS
+  accountNumber       String?   // untuk BANK/CASHLESS
+  status              String    @default("PENDING")  // PENDING, APPROVED, REJECTED, COMPLETED
+  notes               String?   @db.Text
+  rejectionReason     String?   @db.Text
+  approvedById        Int?
+  approvedAt          DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  user                User      @relation("ReimbursementUser", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy          User?     @relation("ReimbursementApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([approvedById])
 }
