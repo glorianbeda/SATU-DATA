@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     Box,
     Button,
@@ -22,6 +22,7 @@ const LoginForm = ({ onSwitch }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
 
     const { t } = useTranslation();
 
@@ -48,7 +49,7 @@ const LoginForm = ({ onSwitch }) => {
                 
                 // Check for redirect parameter
                 const redirectUrl = searchParams.get('redirect');
-                window.location.href = redirectUrl || '/dashboard';
+                navigate(redirectUrl || '/dashboard');
             } else {
                 setError(data.error || t('login_failed'));
             }

@@ -34,6 +34,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
     utilities: false,
     inventory: false,
     pdf: false,
+    reimbursement: false,
   });
   
   // Floating menu anchors (coordinates) for collapsed mode
@@ -59,6 +60,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
     checkAndExpand('docs', navigationConfig.docs.items);
     checkAndExpand('inventory', navigationConfig.inventory.items);
     checkAndExpand('finance', navigationConfig.finance.items);
+    checkAndExpand('reimbursement', navigationConfig.reimbursement.items);
     
     // Check nested tools sections
     navigationConfig.tools.subgroups?.forEach(subgroup => {
@@ -74,7 +76,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
       '/dashboard', 
       '/docs/request', 
       '/docs/inbox',
-      '/inventory/loans' // Add this to prevent highlighting when in /inventory/loans/my-loans
+      '/inventory/loans', // Prevent highlighting parent when in child route
+      '/reimbursement', // Prevent highlighting parent when in /reimbursement/admin
     ];
     
     if (exactMatchPaths.includes(path)) {
@@ -300,6 +303,19 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
             items: filteredInventoryItems,
           };
           return <CollapsibleSection sectionId="inventory" section={inventorySection} />;
+        })()}
+
+        {/* Reimbursement Section - Collapsible, with item-level permissions */}
+        {(() => {
+          const filteredReimbursementItems = navigationConfig.reimbursement.items.filter(
+            (item) => !item.permission || hasPermission(user.role, item.permission)
+          );
+          if (filteredReimbursementItems.length === 0) return null;
+          const reimbursementSection = {
+            ...navigationConfig.reimbursement,
+            items: filteredReimbursementItems,
+          };
+          return <CollapsibleSection sectionId="reimbursement" section={reimbursementSection} />;
         })()}
 
         {/* Admin Section - Permission Required */}

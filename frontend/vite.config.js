@@ -14,7 +14,7 @@ export default defineConfig({
   plugins: [
     react(),
     Pages({
-      importMode: "async",
+      importMode: "sync",
     }),
   ],
   server: {

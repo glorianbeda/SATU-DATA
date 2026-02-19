@@ -7,10 +7,8 @@ import {
   Description as DocsIcon,
   AccountBalanceWallet as WalletIcon,
   AttachMoney as MoneyIcon,
-  WhatsApp as WhatsAppIcon,
   PictureAsPdf as PdfIcon,
   Edit as EditIcon,
-  Traffic as SignIcon,
   TrendingUp,
   TrendingDown,
   CheckCircle as CheckCircleIcon,
@@ -29,6 +27,7 @@ import {
   Category as CategoryIcon,
   RequestPage as RequestIcon,
   Storefront as StorefrontIcon,
+  Receipt as ReimbursementIcon,
 } from "@mui/icons-material";
 
 export const navigationConfig = {
@@ -80,6 +79,70 @@ export const navigationConfig = {
         labelKey: "sidebar.archives",
         icon: ArchiveIcon,
         path: "/archives",
+      },
+    ],
+  },
+
+  // INVENTARIS OMK - sekarang accessible oleh semua user
+  inventory: {
+    labelKey: "sidebar.inventory",
+    icon: InventoryIcon,
+    collapsible: true,
+    items: [
+      {
+        id: "inventory-dashboard",
+        labelKey: "sidebar.inventory_dashboard",
+        icon: DashboardIcon,
+        path: "/inventory",
+      },
+      {
+        id: "inventory-shop",
+        labelKey: "sidebar.shop",
+        icon: StorefrontIcon,
+        path: "/inventory/shop",
+      },
+      {
+        id: "asset-management",
+        labelKey: "sidebar.asset_management",
+        icon: CategoryIcon,
+        path: "/inventory/assets",
+        permission: "canManageInventory",
+      },
+      {
+        id: "category-management",
+        labelKey: "sidebar.category_management",
+        icon: CategoryIcon,
+        path: "/inventory/categories",
+        permission: "isSuperAdmin",
+      },
+      {
+        id: "loan-management",
+        labelKey: "sidebar.loan_management",
+        icon: RequestIcon,
+        path: "/inventory/loans",
+        permission: "canManageInventory",
+      },
+    ],
+  },
+
+  // REIMBURSEMENT - Semua user bisa akses
+  reimbursement: {
+    labelKey: "sidebar.reimbursement",
+    icon: ReimbursementIcon,
+    collapsible: true,
+    items: [
+      {
+        id: "reimbursement-dashboard",
+        labelKey: "sidebar.reimbursement_dashboard",
+        icon: ReimbursementIcon,
+        path: "/reimbursement",
+      },
+      {
+        id: "reimbursement-admin",
+        labelKey: "sidebar.reimbursement_admin",
+        icon: ReimbursementIcon,
+        path: "/reimbursement/admin",
+        permission: "canManageFinance",
       },
     ],
   },
@@ -206,73 +269,6 @@ export const navigationConfig = {
             path: "/tools/pdf/convert",
           },
         ],
-      },
-    ],
-    // Standalone items (not in subfolders)
-    items: [
-      {
-        id: "report-wa",
-        labelKey: "sidebar.report_wa",
-        icon: WhatsAppIcon,
-        path: "/report/wa",
-      },
-      {
-        id: "report-pdf",
-        labelKey: "sidebar.report_pdf",
-        icon: PdfIcon,
-        path: "/report/pdf",
-      },
-      {
-        id: "sign-system",
-        labelKey: "sidebar.sign_system",
-        icon: SignIcon,
-        path: "/sign-system",
-      },
-    ],
-  },
-
-  // INVENTARIS OMK section
-  inventory: {
-    labelKey: "sidebar.inventory",
-    icon: InventoryIcon,
-    collapsible: true,
-    items: [
-      {
-        id: "inventory-dashboard",
-        labelKey: "sidebar.inventory_dashboard",
-        icon: DashboardIcon,
-        path: "/inventory",
-      },
-      {
-        id: "asset-management",
-        labelKey: "sidebar.asset_management",
-        icon: CategoryIcon,
-        path: "/inventory/assets",
-        permission: "canManageInventory",
-      },
-      {
-        id: "category-management",
-        labelKey: "sidebar.category_management",
-        icon: CategoryIcon,
-        path: "/inventory/categories",
-        permission: "isSuperAdmin",
-      },
-      {
-        id: "loan-management",
-        labelKey: "sidebar.loan_management",
-        icon: RequestIcon,
-        path: "/inventory/loans",
-        permission: "canManageInventory",
-      },
-      {
-        id: "inventory-shop",
-        labelKey: "sidebar.shop",
-        icon: StorefrontIcon,
-        path: "/inventory/shop",
-        badge: {
-          text: "New",
-          expiresAt: "2026-02-01",
-        },
       },
     ],
   },
