@@ -44,6 +44,15 @@ temp/
 *.tmp
 dump/*
 
+# IDE/AI tools
+.roo/
+mcp.json
+
+# Project specific
+openspec/
+plans/
+scripts/
+
 # Package manager locks (optional - you may want to keep these)
 # package-lock.json
 # yarn.lock
