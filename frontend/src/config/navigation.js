@@ -28,6 +28,7 @@ import {
   RequestPage as RequestIcon,
   Storefront as StorefrontIcon,
   Receipt as ReimbursementIcon,
+  Link as LinkIcon,
 } from "@mui/icons-material";
 
 export const navigationConfig = {
@@ -46,6 +47,27 @@ export const navigationConfig = {
         labelKey: "sidebar.forms",
         icon: FormIcon,
         path: "/forms",
+      },
+    ],
+  },
+
+  // Satu Link - Collapsible
+  satuLink: {
+    labelKey: "sidebar.satu_link",
+    icon: LinkIcon,
+    collapsible: true,
+    items: [
+      {
+        id: "satu-link-short",
+        labelKey: "sidebar.satu_link_short",
+        icon: LinkIcon,
+        path: "/satu-link/short-links",
+      },
+      {
+        id: "satu-link-tree",
+        labelKey: "sidebar.satu_link_tree",
+        icon: LinkIcon,
+        path: "/satu-link/link-tree",
       },
     ],
   },
@@ -150,8 +172,10 @@ export const navigationConfig = {
   // ADMIN section (matches /admin/*)
   admin: {
     labelKey: "sidebar.admin",
+    icon: PeopleIcon,
     permission: "canManageUsers",
     showDivider: true,
+    collapsible: true,
     items: [
       {
         id: "users",
@@ -164,6 +188,13 @@ export const navigationConfig = {
         labelKey: "sidebar.admin_documents",
         icon: DocsIcon,
         path: "/admin/documents",
+      },
+      {
+        id: "satu-link-admin",
+        labelKey: "sidebar.satu_link_admin",
+        icon: LinkIcon,
+        path: "/admin/satu-link/short-links",
+        permission: "isSuperAdmin",
       },
     ],
   },

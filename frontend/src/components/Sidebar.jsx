@@ -289,6 +289,9 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
           <NavItem key={item.id} item={item} />
         ))}
 
+        {/* Satu Link Section - Collapsible */}
+        <CollapsibleSection sectionId="satuLink" section={navigationConfig.satuLink} />
+
         {/* Docs Section - Collapsible */}
         <CollapsibleSection sectionId="docs" section={navigationConfig.docs} />
 
@@ -318,18 +321,11 @@ const Sidebar = ({ isOpen, toggleSidebar, isCollapsed = false, user }) => {
           return <CollapsibleSection sectionId="reimbursement" section={reimbursementSection} />;
         })()}
 
-        {/* Admin Section - Permission Required */}
+        {/* Admin Section - Permission Required, Collapsible */}
         {hasPermission(user.role, navigationConfig.admin.permission) && (
           <>
             <div className="my-4 border-t border-gray-100 dark:border-gray-800 mx-6"></div>
-            {!isCollapsed && (
-              <p className="px-6 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-                {t(navigationConfig.admin.labelKey)}
-              </p>
-            )}
-            {navigationConfig.admin.items.map((item) => (
-              <NavItem key={item.id} item={item} />
-            ))}
+            <CollapsibleSection sectionId="admin" section={navigationConfig.admin} />
           </>
         )}
 

@@ -47,8 +47,25 @@ model User {
   assetLogs         AssetLog[]          @relation("LogCreator")
   reimbursementRequests Reimbursement[]   @relation("ReimbursementUser")
   approvedReimbursements Reimbursement[]  @relation("ReimbursementApprover")
+  loginSessions       LoginSession[]
+  shortLinks         ShortLink[]       @relation("ShortLinks")
+  linkTree           LinkTree?         @relation("LinkTree")
 
   @@index([roleId], map: "User_roleId_fkey")
+}
+
+model LoginSession {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  ipAddress String?
+  userAgent String?   @db.Text
+  loginAt   DateTime  @default(now())
+  logoutAt  DateTime?
+  isActive  Boolean   @default(true)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([loginAt])
 }
 
 model Form {
@@ -400,4 +417,52 @@ model Reimbursement {
   @@index([userId])
   @@index([status])
   @@index([approvedById])
+}
+
+model ShortLink {
+  id          String   @id @default(uuid())
+  originalUrl String   @db.Text
+  shortCode   String   @unique
+  customCode  String?  @unique
+  userId      Int
+  clicks      Int      @default(0)
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation("ShortLinks", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([shortCode])
+  @@index([customCode])
+}
+
+model LinkTree {
+  id        String          @id @default(uuid())
+  userId    Int             @unique
+  title     String
+  bio       String?         @db.Text
+  avatar    String?         @db.Text
+  isShared  Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation("LinkTree", fields: [userId], references: [id], onDelete: Cascade)
+  items     LinkTreeItem[]  @relation("LinkTreeItems")
+
+  @@index([userId])
+}
+
+model LinkTreeItem {
+  id          String   @id @default(uuid())
+  linkTreeId  String
+  title       String
+  url         String   @db.Text
+  icon        String?  @db.VarChar(255)
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  linkTree    LinkTree @relation("LinkTreeItems", fields: [linkTreeId], references: [id], onDelete: Cascade)
+
+  @@index([linkTreeId])
 }

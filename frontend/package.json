@@ -31,6 +31,7 @@
     "apexcharts": "^5.3.6",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
+    "country-flag-icons": "^1.6.13",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.25",
     "i18next": "^25.6.3",

@@ -1,28 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
 import { Tooltip } from 'react-tooltip';
+import axios from 'axios';
 
 const ActivityHeatmap = () => {
+    const [loginData, setLoginData] = useState([]);
     const today = new Date();
 
-    // Generate dummy data for the last 365 days
+    useEffect(() => {
+        const fetchLoginActivity = async () => {
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/login-activity`, {
+                    withCredentials: true
+                });
+                setLoginData(response.data);
+            } catch (error) {
+                console.error('Error fetching login activity:', error);
+                setLoginData(generateDummyData());
+            }
+        };
+        fetchLoginActivity();
+    }, []);
+
+    const generateDummyData = () => {
+        const shiftDate = (date, numDays) => {
+            const newDate = new Date(date);
+            newDate.setDate(newDate.getDate() + numDays);
+            return newDate;
+        };
+
+        return Array.from({ length: 151 }, (_, i) => ({
+            date: shiftDate(today, -150 + i).toISOString().slice(0, 10),
+            count: Math.floor(Math.random() * 4)
+        }));
+    };
+
+    const displayData = loginData.length > 0 ? loginData : generateDummyData();
+
     const shiftDate = (date, numDays) => {
         const newDate = new Date(date);
         newDate.setDate(newDate.getDate() + numDays);
         return newDate;
     };
-
-    const getRange = (count) => {
-        return Array.from({ length: count }, (_, i) => i);
-    };
-
-    const randomValues = getRange(365).map(index => {
-        return {
-            date: shiftDate(today, -index),
-            count: Math.floor(Math.random() * 4), // 0-3 intensity
-        };
-    });
 
     return (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-300">
@@ -32,17 +52,21 @@ const ActivityHeatmap = () => {
                     <CalendarHeatmap
                         startDate={shiftDate(today, -150)}
                         endDate={today}
-                        values={randomValues}
+                        values={displayData.map(d => ({ date: d.date, count: d.count }))}
                         classForValue={(value) => {
-                            if (!value) {
+                            if (!value || value.count === 0) {
                                 return 'color-empty';
                             }
-                            return `color-scale-${value.count}`;
+                            if (value.count <= 2) return 'color-scale-1';
+                            if (value.count <= 5) return 'color-scale-2';
+                            if (value.count <= 10) return 'color-scale-3';
+                            return 'color-scale-4';
                         }}
                         tooltipDataAttrs={value => {
+                            if (!value || !value.date) return null;
                             return {
                                 'data-tooltip-id': 'heatmap-tooltip',
-                                'data-tooltip-content': `${value.date.toISOString().slice(0, 10)}: ${value.count} logins`,
+                                'data-tooltip-content': `${value.date}: ${value.count || 0} logins`,
                             };
                         }}
                         showWeekdayLabels={true}
@@ -74,4 +98,3 @@ const ActivityHeatmap = () => {
 };
 
 export default ActivityHeatmap;
-

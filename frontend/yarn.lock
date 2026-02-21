@@ -1858,6 +1858,11 @@ cosmiconfig@^7.0.0:
     path-type "^4.0.0"
     yaml "^1.10.0"
 
+country-flag-icons@^1.6.13:
+  version "1.6.13"
+  resolved "https://registry.yarnpkg.com/country-flag-icons/-/country-flag-icons-1.6.13.tgz#744de466baf5d8189942ba08fc57167f74037282"
+  integrity sha512-mR9GoTXtj3zAXoZXBkb3J4QvyDllFEPtEfZvHb9U23TAHYXfkJyP03pRtZiR0spxo6Ibja3R/hn6a68T4LHBuA==
+
 crc-32@~1.2.0, crc-32@~1.2.1:
   version "1.2.2"
   resolved "https://registry.npmjs.org/crc-32/-/crc-32-1.2.2.tgz"

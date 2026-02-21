@@ -29,8 +29,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAlert } from '~/context/AlertContext';
-import IndonesiaFlag from '~/assets/indonesia.png';
-import USFlag from '~/assets/united-states.png';
+import IndonesiaFlag from 'country-flag-icons/react/3x2/ID';
+import USFlag from 'country-flag-icons/react/3x2/US';
 
 const Header = ({ title, toggleSidebar, user }) => {
   const { mode, toggleTheme } = useTheme();
@@ -79,7 +79,7 @@ const Header = ({ title, toggleSidebar, user }) => {
     navigate('/login');
   }, [navigate, showSuccess, t]);
 
-  const currentLang = i18n.language === 'id' ? IndonesiaFlag : USFlag;
+  const currentLang = i18n.language === 'id' ? <IndonesiaFlag style={{ width: 24, height: 16, objectFit: 'cover', borderRadius: 2 }} /> : <USFlag style={{ width: 24, height: 16, objectFit: 'cover', borderRadius: 2 }} />;
 
   return (
     <div className="flex justify-between items-start md:items-center">
@@ -113,7 +113,7 @@ const Header = ({ title, toggleSidebar, user }) => {
             onClick={(e) => setLangAnchorEl(e.currentTarget)}
             className="hidden md:flex p-2.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-blue-600 transition-colors items-center gap-1"
           >
-            <img src={currentLang} alt="Flag" style={{ width: 24, height: 16, objectFit: 'cover', borderRadius: 2 }} />
+            {currentLang}
           </button>
         </Tooltip>
         <Menu
@@ -127,14 +127,14 @@ const Header = ({ title, toggleSidebar, user }) => {
             onClick={() => handleLanguageChange('id')}
             selected={i18n.language === 'id'}
           >
-            <img src={IndonesiaFlag} alt="Indonesia" style={{ width: 20, height: 14, marginRight: 8, objectFit: 'cover', borderRadius: 1 }} />
+            <IndonesiaFlag style={{ width: 20, height: 14, marginRight: 8, objectFit: 'cover', borderRadius: 1 }} />
             Bahasa Indonesia
           </MenuItem>
           <MenuItem
             onClick={() => handleLanguageChange('en')}
             selected={i18n.language === 'en'}
           >
-            <img src={USFlag} alt="English" style={{ width: 20, height: 14, marginRight: 8, objectFit: 'cover', borderRadius: 1 }} />
+            <USFlag style={{ width: 20, height: 14, marginRight: 8, objectFit: 'cover', borderRadius: 1 }} />
             English
           </MenuItem>
         </Menu>

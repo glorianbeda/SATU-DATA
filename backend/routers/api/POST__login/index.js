@@ -48,6 +48,14 @@ module.exports = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    await prisma.loginSession.create({
+      data: {
+        userId: user.id,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get("User-Agent"),
+      },
+    });
+
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
