@@ -41,7 +41,7 @@ const CategoriesList = () => {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = user.role;
-  const canManageCategories = hasPermission(userRole, 'isSuperAdmin');
+  const canManageCategories = hasPermission(userRole, 'canManageInventory');
 
   const fetchCategories = async () => {
     try {
@@ -113,19 +113,20 @@ const CategoriesList = () => {
     fetchCategories();
   }, []);
 
-  if (!canManageCategories) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" color="error">
-          {t('inventory.access_denied')}
-        </Typography>
-      </Box>
-    );
-  }
+  // Remove frontend permission check - let backend handle authorization
+  // if (!canManageCategories) {
+  //   return (
+  //     <Box sx={{ p: 3 }}>
+  //       <Typography variant="h6" color="error">
+  //         {t('inventory.access_denied')}
+  //       </Typography>
+  //     </Box>
+  //   );
+  // }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
         {t('inventory.category_management', 'Category Management')}
       </Typography>
 

@@ -135,7 +135,7 @@ export const navigationConfig = {
         labelKey: "sidebar.category_management",
         icon: CategoryIcon,
         path: "/inventory/categories",
-        permission: "isSuperAdmin",
+        permission: "canManageInventory",
       },
       {
         id: "loan-management",

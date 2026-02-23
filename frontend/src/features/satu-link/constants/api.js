@@ -16,6 +16,7 @@ export const SATU_LINK_API = {
 
   // Member - Link Tree
   GET_MY_LINK_TREE: "/api/satu-link/my/link-tree",
+  FIX_LINK_TREE_TITLE: "/api/satu-link/my/link-tree/fix-title",
   UPDATE_MY_LINK_TREE: "/api/satu-link/my/link-tree",
   GET_MY_LINK_TREE_ITEMS: "/api/satu-link/my/link-tree/items",
   CREATE_MY_LINK_TREE_ITEM: "/api/satu-link/my/link-tree/items",

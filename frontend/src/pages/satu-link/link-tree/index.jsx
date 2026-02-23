@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box, Typography, Button, CircularProgress, TextField, Switch,
-  FormControlLabel, IconButton, Avatar, Grid, Dialog, 
+  FormControlLabel, IconButton, Avatar, Dialog, 
   DialogTitle, DialogContent, DialogActions, Paper,
   MenuItem, InputAdornment
 } from '@mui/material';
@@ -131,18 +131,18 @@ const SortableItem = ({ item, onEdit, onDelete }) => {
         size="small"
         onClick={() => onEdit(item)}
         sx={{ 
-          color: 'primary.main',
-          '&:hover': { bgcolor: 'primary.light', color: 'white' },
+          color: 'text.secondary',
+          '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
         }}
       >
         <EditIcon fontSize="small" />
       </IconButton>
       <IconButton
         size="small"
-        color="error"
         onClick={() => onDelete(item.id)}
         sx={{ 
-          '&:hover': { bgcolor: 'error.light', color: 'white' },
+          color: 'text.secondary',
+          '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
         }}
       >
         <DeleteIcon fontSize="small" />
@@ -324,9 +324,9 @@ const LinkTreePage = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, height: 'calc(100vh - 100px)' }}>
-      <Grid container spacing={3} sx={{ height: '100%' }}>
-        <Grid item xs={12} md={4} lg={3}>
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, height: 'calc(100vh - 100px)', width: '100%', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', gap: 3, height: '100%', width: '100%' }}>
+        <Box sx={{ width: { xs: '100%', md: '320px' }, flexShrink: 0, height: '100%' }}>
           <Paper 
             sx={{ 
               p: 3, 
@@ -343,21 +343,46 @@ const LinkTreePage = () => {
               <Typography variant="h6" fontWeight="600">
                 {t('satu_link.link_tree')}
               </Typography>
-              <Button
-                size="small"
-                startIcon={<EditIcon />}
-                onClick={() => setSettingsDialog({ open: true, loading: false })}
-                sx={{ 
-                  color: 'white',
-                  borderColor: 'rgba(255,255,255,0.5)',
-                  '&:hover': {
-                    borderColor: 'white',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                  },
-                }}
-              >
-                {t('satu_link.edit')}
-              </Button>
+              <Box className="flex gap-2">
+                {linkTree?.title?.includes('undefined') && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={async () => {
+                      try {
+                        const response = await api.post(SATU_LINK_API.FIX_LINK_TREE_TITLE);
+                        setLinkTree(response.data.linkTree);
+                        setItems(response.data.linkTree.items || []);
+                        showSuccess(t('satu_link.title_fixed', 'Nama LinkTree diperbarui'));
+                      } catch {
+                        showError(t('common.error'));
+                      }
+                    }}
+                    sx={{ 
+                      bgcolor: 'warning.main',
+                      color: 'white',
+                      '&:hover': { bgcolor: 'warning.dark' },
+                    }}
+                  >
+                    Fix
+                  </Button>
+                )}
+                <Button
+                  size="small"
+                  startIcon={<EditIcon />}
+                  onClick={() => setSettingsDialog({ open: true, loading: false })}
+                  sx={{ 
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                    },
+                  }}
+                >
+                  {t('satu_link.edit')}
+                </Button>
+              </Box>
             </Box>
 
             <Box className="text-center mb-4 flex-shrink-0">
@@ -425,15 +450,16 @@ const LinkTreePage = () => {
               </Button>
             )}
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={8} lg={9}>
+        <Box sx={{ flexGrow: 1, height: '100%', minWidth: 0 }}>
           <Paper 
             sx={{ 
               p: 3, 
               borderRadius: 3, 
               boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
               height: '100%',
+              minHeight: 600,
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
@@ -499,8 +525,8 @@ const LinkTreePage = () => {
               </DndContext>
             )}
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       <Dialog
         open={settingsDialog.open}
@@ -570,6 +596,11 @@ const LinkTreePage = () => {
               boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
               '&:hover': {
                 background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+              },
+              '&.Mui-disabled': {
+                background: '#e0e0e0',
+                color: '#9e9e9e',
+                boxShadow: 'none',
               },
             }}
           >
@@ -681,6 +712,11 @@ const LinkTreePage = () => {
               boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
               '&:hover': {
                 background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+              },
+              '&.Mui-disabled': {
+                background: '#e0e0e0',
+                color: '#9e9e9e',
+                boxShadow: 'none',
               },
             }}
           >

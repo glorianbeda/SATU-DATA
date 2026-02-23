@@ -13,10 +13,12 @@ const handler = async (req, res) => {
     });
 
     if (!linkTree) {
+      // Fallback to email username if name is undefined
+      const userName = req.user.name || req.user.email.split('@')[0];
       linkTree = await prisma.linkTree.create({
         data: {
           userId: req.user.id,
-          title: `${req.user.name}'s Link Tree`,
+          title: `${userName}'s Link Tree`,
           isShared: false,
         },
         include: {

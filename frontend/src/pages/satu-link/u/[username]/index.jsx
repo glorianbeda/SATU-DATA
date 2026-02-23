@@ -119,10 +119,11 @@ const PublicLinkTreePage = () => {
 
   return (
     <Box 
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4"
+      className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800"
+      sx={{ px: { xs: 3, sm: 4, md: 6 }, py: { xs: 4, sm: 6 } }}
     >
-      <Box className="w-full max-w-lg">
-        <Box className="text-center mb-8">
+      <Box className="w-full max-w-2xl mx-auto flex flex-col justify-between" sx={{ minHeight: 'calc(100vh - 48px)' }}>
+        <Box className="text-center mb-6">
           <Paper
             className="inline-block p-1"
             sx={{ 
@@ -182,36 +183,41 @@ const PublicLinkTreePage = () => {
           </Button>
         </Box>
 
-        <Box className="space-y-3">
+        <Box className="w-full space-y-3 px-2 sm:px-4" sx={{ flexGrow: 1 }}>
           {linkTree?.items?.map((item, index) => (
             <a
               key={item.id}
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block"
+              className="block w-full"
             >
               <Paper 
-                className="p-4 flex items-center gap-3"
+                className="p-4 flex items-center gap-4 w-full"
                 sx={{ 
-                  borderRadius: '16px',
+                  borderRadius: '20px',
                   transition: 'all 0.2s ease',
                   cursor: 'pointer',
+                  background: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(10px)',
+                  border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)',
                   '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.12)',
+                    transform: 'translateY(-3px) scale(1.01)',
+                    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+                    background: isDark ? 'rgba(50, 50, 50, 1)' : 'rgba(255, 255, 255, 1)',
                   },
                 }}
               >
                 <Box 
                   className="flex items-center justify-center"
                   sx={{ 
-                    width: 44,
-                    height: 44,
-                    borderRadius: '12px',
+                    width: 52,
+                    height: 52,
+                    borderRadius: '14px',
                     background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
                     color: 'white',
                     flexShrink: 0,
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
                   }}
                 >
                   {getIconComponent(item.icon)}
@@ -243,10 +249,13 @@ const PublicLinkTreePage = () => {
 
           {(!linkTree?.items || linkTree.items.length === 0) && (
             <Paper 
-              className="p-8 text-center"
-              sx={{ borderRadius: '24px' }}
+              className="p-10 text-center"
+              sx={{ 
+                borderRadius: '24px',
+                background: isDark ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+              }}
             >
-              <LinkIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+              <LinkIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
               <Typography variant="body1" color="text.secondary">
                 {t('satu_link.no_links_yet', 'Belum ada link')}
               </Typography>

@@ -1,7 +1,7 @@
 const { Resend } = require("resend");
 
-// Singleton Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Singleton Resend client - only initialize if API key exists
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // In-memory rate limiter (for production, use Redis)
 const emailRateLimiter = new Map();
@@ -128,6 +128,11 @@ const sendEmail = async ({
   }
 
   try {
+    if (!resend) {
+      console.log("Email (mock):", { from, to, subject, html });
+      return { success: true, data: { id: "mock-email-id" } };
+    }
+    
     const result = await resend.emails.send({
       from,
       to,
