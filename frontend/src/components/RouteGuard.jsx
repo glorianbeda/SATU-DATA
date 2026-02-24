@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import PageLoader from './PageLoader';
 
 /**
@@ -15,9 +15,7 @@ export const ProtectedRoute = ({ children }) => {
     const validateSession = async () => {
       try {
         // Validate session by calling profile endpoint with credentials (cookies)
-        await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          withCredentials: true
-        });
+        await api.get('/api/profile');
         setIsValid(true);
       } catch (error) {
         // Session invalid or expired
@@ -51,9 +49,7 @@ export const PublicRoute = ({ children }) => {
     const checkAuth = async () => {
       try {
         // Check if session is valid
-        await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          withCredentials: true
-        });
+        await api.get('/api/profile');
         setIsLoggedIn(true);
       } catch (error) {
         // Not logged in
@@ -83,9 +79,7 @@ export const RoleRoute = ({ children, allowedRoles = [] }) => {
     const checkAuth = async () => {
       try {
         // Validate session and get user role
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          withCredentials: true
-        });
+        const response = await api.get('/api/profile');
         
         const userRole = response.data.user.role?.name || response.data.user.role;
         
