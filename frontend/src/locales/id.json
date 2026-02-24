@@ -8,6 +8,14 @@
   "network_error": "Kesalahan jaringan. Silakan coba lagi.",
   "app_name": "Satu Data+",
   "app_tagline": "Sistem Manajemen Terintegrasi",
+  "created_by_omk": "Diciptakan dengan bangga oleh OMK HMTB Cicurug",
+  "welcome": "Selamat Datang",
+  "subtitle": "Silakan masuk untuk melanjutkan",
+  "register_subtitle": "Daftar untuk memulai",
+  "dont_have_account": "Belum punya akun?",
+  "already_have_account": "Sudah punya akun?",
+  "register": "Daftar",
+  "login": "Masuk",
   "header": {
     "change_language": "Ganti Bahasa",
     "account_settings": "Pengaturan Akun"
