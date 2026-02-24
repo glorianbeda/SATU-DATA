@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '~/components/DataTable/DataTable';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 import { Button, Box, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Modal } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -30,9 +30,8 @@ const Expense = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/transactions`, {
-        params: { type: 'EXPENSE', limit: 1000 },
-        withCredentials: true
+      const response = await api.get('/api/finance/transactions', {
+        params: { type: 'EXPENSE', limit: 1000 }
       });
       setData(response.data.transactions);
     } catch (error) {
@@ -59,14 +58,12 @@ const Expense = () => {
       }
 
       if (editingTransaction) {
-        await axios.put(`${import.meta.env.VITE_API_URL}/api/finance/transactions/${editingTransaction.id}`, payload, {
-          withCredentials: true,
+        await api.put(`/api/finance/transactions/${editingTransaction.id}`, payload, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         showSuccess(t('finance.transaction_updated', 'Transaction updated successfully'));
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/finance/transactions`, payload, {
-          withCredentials: true,
+        await api.post('/api/finance/transactions', payload, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         showSuccess(t('finance.transaction_added', 'Transaction added successfully'));
@@ -92,9 +89,7 @@ const Expense = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/finance/transactions/${deletingTransaction.id}`, {
-        withCredentials: true
-      });
+      await api.delete(`/api/finance/transactions/${deletingTransaction.id}`);
       showSuccess(t('finance.transaction_deleted', 'Transaction deleted successfully'));
       setDeleteDialogOpen(false);
       setDeletingTransaction(null);
@@ -107,11 +102,9 @@ const Expense = () => {
 
   const handleImport = async (transactions) => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/finance/bulk`, {
+      await api.post('/api/finance/bulk', {
         transactions,
         type: 'EXPENSE'
-      }, {
-        withCredentials: true
       });
       setImportModalOpen(false);
       fetchData();

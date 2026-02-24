@@ -17,7 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ImageIcon from '@mui/icons-material/Image';
 import RichTextEditor from './RichTextEditor';
 // import Masonry from '@mui/lab/Masonry'; // Removed dependency, using custom SimpleMasonry
-import axios from 'axios';
+import api from '~/utils/api';
 import { useLayout } from '~/context/LayoutContext';
 import { useAlert } from '~/context/AlertContext';
 
@@ -228,9 +228,8 @@ const NoteEditorDialog = ({ open, note, onClose, onSave, onDelete }) => {
     formData.append('image', file);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/upload/image`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        withCredentials: true 
+      const res = await api.post('/api/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       setForm(prev => ({ ...prev, coverImage: res.data.url }));
     } catch (err) {
@@ -363,7 +362,7 @@ const NotebookPage = () => {
   const fetchNotes = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/notes`, { withCredentials: true });
+      const res = await api.get('/api/notes');
       setNotes(res.data.notes || []);
     } catch (err) {
       showError('Failed to load notes');
@@ -383,19 +382,17 @@ const NotebookPage = () => {
         // Don't create empty notes
         if (!noteData.title.trim() && !noteData.content.trim()) return; 
         
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/notes`, 
-          noteData, 
-          { withCredentials: true }
+        const res = await api.post(
+          '/api/notes', 
+          noteData
         );
         savedNote = res.data.note;
         setNotes(prev => [savedNote, ...prev]);
       } else {
         // Update
-        const res = await axios.put(
-          `${import.meta.env.VITE_API_URL}/api/notes/${noteData.id}`, 
-          noteData, 
-          { withCredentials: true }
+        const res = await api.put(
+          `/api/notes/${noteData.id}`, 
+          noteData
         );
         savedNote = res.data.note;
         setNotes(prev => prev.map(n => n.id === noteData.id ? savedNote : n));
@@ -411,10 +408,9 @@ const NotebookPage = () => {
     // Optimistic
     setNotes(prev => prev.map(n => n.id === note.id ? updated : n));
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/notes/${note.id}`, 
-        { isPinned: newPinnedStatus }, 
-        { withCredentials: true }
+      await api.put(
+        `/api/notes/${note.id}`, 
+        { isPinned: newPinnedStatus }
       );
     } catch (err) {
       fetchNotes(); // Revert
@@ -423,7 +419,7 @@ const NotebookPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/notes/${id}`, { withCredentials: true });
+      await api.delete(`/api/notes/${id}`);
       setNotes(prev => prev.filter(n => n.id !== id));
       setActiveNote(null);
       showSuccess('Note deleted');

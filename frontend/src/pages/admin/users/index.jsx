@@ -10,7 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EmailIcon from '@mui/icons-material/Email';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useLayout } from '~/context/LayoutContext';
 import { DataTable } from '~/components/DataTable';
 import { useAlert } from '~/context/AlertContext';
@@ -42,9 +42,7 @@ const UserManagement = () => {
 
   const fetchPendingUsers = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/pending`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/users/pending');
       setPendingUsers(response.data.users);
     } catch (err) {
       showError(err.response?.data?.error || 'Failed to fetch pending users');
@@ -53,9 +51,7 @@ const UserManagement = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/users');
       setAllUsers(response.data.users);
       setRoles(response.data.roles || []);
     } catch (err) {
@@ -68,9 +64,7 @@ const UserManagement = () => {
       setLoading(true);
       try {
         // Fetch current user profile
-        const profileRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, {
-          withCredentials: true
-        });
+        const profileRes = await api.get('/api/profile');
         setCurrentUser(profileRes.data.user);
       } catch (err) {
         console.error('Failed to fetch profile', err);
@@ -84,7 +78,7 @@ const UserManagement = () => {
   const handleApprove = async (userId) => {
     setActionLoading(userId);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/approve`,
+      await api.post('/api/users/approve',
         { userId },
         { withCredentials: true }
       );
@@ -101,7 +95,7 @@ const UserManagement = () => {
   const handleReject = async (userId) => {
     setActionLoading(userId);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/reject`,
+      await api.post('/api/users/reject',
         { userId },
         { withCredentials: true }
       );
@@ -151,7 +145,7 @@ const UserManagement = () => {
   const executeRoleChange = async (userId, roleId) => {
     setActionLoading(userId);
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${userId}/role`,
+      await api.put(`/api/users/${userId}/role`,
         { roleId },
         { withCredentials: true }
       );
@@ -168,9 +162,7 @@ const UserManagement = () => {
   const handleResendVerification = async (userId) => {
     setActionLoading(userId);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users/${userId}/resend-verification`, {},
-        { withCredentials: true }
-      );
+      await api.post(`/api/users/${userId}/resend-verification`, {});
       showSuccess('Verification email sent');
     } catch (err) {
       showError(err.response?.data?.error || 'Failed to send verification email');
@@ -183,7 +175,7 @@ const UserManagement = () => {
     const { user } = editDialog;
     setActionLoading(user.id);
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`,
+      await api.put(`/api/users/${user.id}`,
         { name: user.name, email: user.email },
         { withCredentials: true }
       );
@@ -201,9 +193,7 @@ const UserManagement = () => {
     const { user } = deleteDialog;
     setActionLoading(user.id);
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`,
-        { withCredentials: true }
-      );
+      await api.delete(`/api/users/${user.id}`);
       showSuccess('User deleted successfully');
       setDeleteDialog({ open: false, user: null });
       fetchAllUsers();

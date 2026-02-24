@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import { dashboardApi } from '../constants/api';
 import BalanceCard from './BalanceCard';
 import SummaryCard from './SummaryCard';
 import ActivityHeatmap from './ActivityHeatmap';
@@ -22,10 +22,8 @@ const DashboardLayout = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/summary`, {
-          withCredentials: true
-        });
-        setSummary(response.data.summary);
+        const response = await dashboardApi.getFinanceSummary();
+        setSummary(response.summary);
       } catch (error) {
         console.error('Error fetching dashboard summary:', error);
       } finally {

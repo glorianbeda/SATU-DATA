@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Alert, CircularProgress, Paper, Button } from '@mui/material';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 
@@ -22,7 +22,7 @@ const VerifyEmail = () => {
       }
 
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/verify-email?token=${token}`);
+        const response = await api.get(`/api/verify-email?token=${token}`);
         setSuccess(response.data.message);
       } catch (err) {
         setError(err.response?.data?.error || 'Verification failed');

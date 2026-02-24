@@ -7,7 +7,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DescriptionIcon from '@mui/icons-material/Description';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useLayout } from '~/context/LayoutContext';
 import { DataTable } from '~/components/DataTable';
 import { useAlert } from '~/context/AlertContext';
@@ -36,9 +36,7 @@ const DocumentManagement = () => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/documents/admin`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/documents/admin');
       setDocuments(response.data.documents);
     } catch (err) {
       showError(err.response?.data?.error || 'Gagal memuat dokumen');
@@ -55,9 +53,7 @@ const DocumentManagement = () => {
     const { document } = deleteDialog;
     setActionLoading(document.id);
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/documents/${document.id}`, {
-        withCredentials: true
-      });
+      await api.delete(`/api/documents/${document.id}`);
       showSuccess('Dokumen berhasil dihapus');
       setDeleteDialog({ open: false, document: null });
       fetchDocuments();

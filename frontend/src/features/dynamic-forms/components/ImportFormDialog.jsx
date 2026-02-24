@@ -9,7 +9,7 @@ import {
   Typography,
   Alert
 } from '@mui/material';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 
 const ImportFormDialog = ({ open, onClose, onSuccess }) => {
@@ -32,9 +32,7 @@ const ImportFormDialog = ({ open, onClose, onSuccess }) => {
       }
 
       // Send to API
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/forms/import`, parsedData, {
-        withCredentials: true
-      });
+      await api.post('/api/forms/import', parsedData);
 
       onSuccess();
       onClose();

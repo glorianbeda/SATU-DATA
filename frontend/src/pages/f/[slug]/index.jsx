@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, CircularProgress, TextField, Container, Alert } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import FormRenderer from '~/features/dynamic-forms/components/FormRenderer';
 
 import PublicFormLayout from '~/features/dynamic-forms/components/PublicFormLayout';
@@ -26,7 +26,7 @@ const PublicFormPage = () => {
       try {
          // Assuming we have a context or we can try fetching profile
          // If generic axios with credentials works:
-         const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/profile`, { withCredentials: true });
+         const response = await api.get('/api/profile');
          setUser(response.data.user || response.data);
       } catch (err) {
          // Not logged in
@@ -39,7 +39,7 @@ const PublicFormPage = () => {
   useEffect(() => {
     const fetchForm = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/forms/public/${slug}`);
+        const response = await api.get(`/api/forms/public/${slug}`);
         setForm(response.data);
       } catch (error) {
         setError(error.response?.data?.error || 'Form not found or inactive');
@@ -67,11 +67,9 @@ const PublicFormPage = () => {
     setSubmitting(true);
     setError(null);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/forms/${slug}/submit`, {
+      await api.post(`/api/forms/${slug}/submit`, {
         data,
         guestName: user ? undefined : guestName
-      }, {
-        withCredentials: true 
       });
       setSuccess(true);
       

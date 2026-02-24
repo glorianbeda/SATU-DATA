@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, Paper, TextField, FormControlLabel, Switch, CircularProgress, Fab } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 import { useAlert } from '~/context/AlertContext';
 import FormBuilder from '~/features/dynamic-forms/components/FormBuilder';
@@ -27,9 +27,7 @@ const EditFormPage = () => {
   useEffect(() => {
     const fetchForm = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/forms/${id}`, {
-          withCredentials: true
-        });
+        const response = await api.get(`/api/forms/${id}`);
         const form = response.data;
         setTitle(form.title);
         setDescription(form.description || '');
@@ -67,9 +65,7 @@ const EditFormPage = () => {
         settings,
       };
 
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/forms/${id}`, payload, {
-        withCredentials: true
-      });
+      await api.put(`/api/forms/${id}`, payload);
 
       showSuccess(t('forms.form_updated'));
     } catch (error) {

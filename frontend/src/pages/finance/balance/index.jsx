@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 import WalletCard from '~/features/finance/components/WalletCard';
 import EditBalanceModal from '~/features/finance/components/EditBalanceModal';
@@ -25,9 +25,7 @@ const Balance = () => {
   const fetchBalanceData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/initial-balance`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/finance/initial-balance');
       setBalanceData(response.data);
     } catch (error) {
       console.error('Error fetching balance:', error);
@@ -38,9 +36,7 @@ const Balance = () => {
 
   const fetchChartData = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/summary`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/finance/summary');
 
       const categories = Object.keys(response.data.chartData).sort();
       const incomeSeries = categories.map(cat => response.data.chartData[cat].income);
@@ -61,9 +57,7 @@ const Balance = () => {
   const fetchHistory = async () => {
     setHistoryLoading(true);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/balance-history`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/finance/balance-history');
       setHistory(response.data.history || []);
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -79,9 +73,7 @@ const Balance = () => {
 
   const handleSaveBalance = async (data) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/finance/initial-balance`, data, {
-        withCredentials: true
-      });
+      await api.put('/api/finance/initial-balance', data);
       await fetchBalanceData();
     } catch (error) {
       console.error('Error saving balance:', error);

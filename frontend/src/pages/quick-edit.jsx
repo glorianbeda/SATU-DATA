@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button, IconButton, Tooltip } from '@mui/material';
@@ -29,9 +29,8 @@ const QuickEdit = () => {
       if (transactionType) {
         params.type = transactionType;
       }
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/finance/transactions`, {
-        params,
-        withCredentials: true
+      const response = await api.get('/api/finance/transactions', {
+        params
       });
       setTransactions(response.data.transactions);
     } catch (error) {
@@ -84,9 +83,7 @@ const QuickEdit = () => {
     // If it's an existing transaction, delete from API
     if (transaction.id) {
       try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/finance/transactions/${transaction.id}`, {
-          withCredentials: true
-        });
+        await api.delete(`/api/finance/transactions/${transaction.id}`);
         showSuccess(t('quick_edit.row_deleted'));
       } catch (error) {
         console.error('Error deleting transaction:', error);
@@ -129,14 +126,13 @@ const QuickEdit = () => {
         }
 
         const config = { 
-            headers: { 'Content-Type': 'multipart/form-data' },
-            withCredentials: true 
+            headers: { 'Content-Type': 'multipart/form-data' }
         };
 
         if (transaction.id) {
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/finance/transactions/${transaction.id}`, formData, config);
+            await api.put(`/api/finance/transactions/${transaction.id}`, formData, config);
         } else {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/finance/transactions`, formData, config);
+            await api.post('/api/finance/transactions', formData, config);
         }
       }));
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import api from '~/utils/api';
+import { profileApi } from '../constants/api';
 import { 
   TextField, 
   Button, 
@@ -29,10 +29,7 @@ const ChangePasswordForm = () => {
     setLoading(true);
 
     try {
-      await api.put('/api/profile/password', {
-        oldPassword,
-        newPassword
-      });
+      await profileApi.changePassword(oldPassword, newPassword);
 
       setMessage({ type: 'success', text: t('profile.password_updated') });
       setOldPassword('');

@@ -214,7 +214,7 @@ const PublicLinkTreePage = () => {
                     width: 52,
                     height: 52,
                     borderRadius: '14px',
-                    background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+                    background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
                     color: 'white',
                     flexShrink: 0,
                     boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',

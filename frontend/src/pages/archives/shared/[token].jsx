@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import {
   Box, Typography, Paper, Button, CircularProgress, 
   Container, Avatar, Grid, Chip, Divider, Alert
@@ -41,7 +41,7 @@ export default function SharedArchivePage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/api/archives/share/${token}`);
+        const response = await api.get(`/api/archives/share/${token}`);
         setData(response.data);
       } catch (err) {
         setError(err.response?.data?.error || 'Gagal memuat file yang dibagikan');

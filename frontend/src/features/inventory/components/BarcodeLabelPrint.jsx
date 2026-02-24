@@ -143,11 +143,17 @@ const BarcodeLabelPrint = ({ open, onClose, assets = [], selectedAssetIds = [] }
              disabled={selected.length === 0 || loading}
              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
              sx={{
-               background: 'linear-gradient(to right, #3b82f6, #2563eb)',
-               boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.5)',
+               background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+               boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+               color: 'white',
                '&:hover': {
-                 background: 'linear-gradient(to right, #2563eb, #1d4ed8)',
-               }
+                 background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
+               },
+               '&.Mui-disabled': {
+                 background: '#e0e0e0',
+                 color: '#9e9e9e',
+                 boxShadow: 'none',
+               },
              }}
            >
              {loading ? t('common.processing') : `${t('common.download')} PDF (${selected.length * quantity})`}

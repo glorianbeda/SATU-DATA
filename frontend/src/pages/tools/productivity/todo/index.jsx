@@ -40,7 +40,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useLayout } from '~/context/LayoutContext';
 import { useAlert } from '~/context/AlertContext';
 
@@ -355,7 +355,7 @@ function TaskEditModal({ open, task, onClose, onSave, onDelete, listId }) {
   useEffect(() => {
     if (open && listId) {
       // Fetch members for assignment
-      axios.get(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members`, { withCredentials: true })
+      api.get(`/api/task-lists/${listId}/members`)
         .then(res => setMembers(res.data.members || []))
         .catch(console.error);
     }
@@ -632,7 +632,7 @@ function MemberModal({ open, listId, onClose }) {
   const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members`, { withCredentials: true });
+      const res = await api.get(`/api/task-lists/${listId}/members`);
       setMembers(res.data.members || []);
     } catch (err) {
       showError('Gagal memuat anggota');
@@ -647,7 +647,7 @@ function MemberModal({ open, listId, onClose }) {
 
   const handleInvite = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members`, { email: inviteEmail, permission: 'EDITOR' }, { withCredentials: true });
+      await api.post(`/api/task-lists/${listId}/members`, { email: inviteEmail, permission: 'EDITOR' });
       showSuccess('Anggota berhasil diundang');
       setInviteEmail('');
       fetchMembers();
@@ -659,7 +659,7 @@ function MemberModal({ open, listId, onClose }) {
   const handleRemove = async (userId) => {
     if (!confirm('Hapus anggota ini?')) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}/members/${userId}`, { withCredentials: true });
+      await api.delete(`/api/task-lists/${listId}/members/${userId}`);
       showSuccess('Anggota berhasil dihapus');
       fetchMembers();
     } catch (err) {
@@ -784,10 +784,7 @@ function TodoPage() {
   // Fetch TaskLists on mount
   const fetchTaskLists = useCallback(async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/task-lists`,
-        { withCredentials: true }
-      );
+      const res = await api.get('/api/task-lists');
       const lists = res.data.taskLists || [];
       setTaskLists(lists);
       // Auto-select first list if none selected
@@ -816,10 +813,7 @@ function TodoPage() {
       if (assignedToMe) params.append('assignedToMe', 'true');
       if (sortBy) params.append('sortBy', sortBy);
 
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/tasks?${params.toString()}`,
-        { withCredentials: true }
-      );
+      const res = await api.get(`/api/tasks?${params.toString()}`);
       setTasks(res.data.tasks || []);
     } catch (err) {
       showError('Failed to load tasks');
@@ -838,18 +832,10 @@ function TodoPage() {
   const handleSaveTask = async (taskData) => {
     try {
       if (taskData.id) {
-        await axios.put(
-          `${import.meta.env.VITE_API_URL}/api/tasks/${taskData.id}`,
-          taskData,
-          { withCredentials: true }
-        );
+        await api.put(`/api/tasks/${taskData.id}`, taskData);
         showSuccess('Task updated');
       } else {
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/tasks`,
-          { ...taskData, taskListId: selectedListId },
-          { withCredentials: true }
-        );
+        await api.post('/api/tasks', { ...taskData, taskListId: selectedListId });
         showSuccess('Task created');
       }
       fetchTasks();
@@ -861,7 +847,7 @@ function TodoPage() {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/tasks/${taskId}`, { withCredentials: true });
+      await api.delete(`/api/tasks/${taskId}`);
       showSuccess('Task deleted');
       fetchTasks();
       setEditTask(null);
@@ -889,11 +875,7 @@ function TodoPage() {
       const task = tasks.find(t => String(t.id) === activeTaskId);
       if (task && task.status !== overId) {
         try {
-          await axios.put(
-            `${import.meta.env.VITE_API_URL}/api/tasks/${task.id}`,
-            { status: overId },
-            { withCredentials: true }
-          );
+          await api.put(`/api/tasks/${task.id}`, { status: overId });
           fetchTasks();
         } catch (err) {
           showError('Failed to update status');
@@ -910,11 +892,7 @@ function TodoPage() {
         const newTasks = arrayMove(tasks, oldIndex, newIndex);
         setTasks(newTasks);
         try {
-          await axios.put(
-            `${import.meta.env.VITE_API_URL}/api/tasks/reorder`,
-            { taskListId: selectedListId, tasks: newTasks.map((t, i) => ({ id: t.id, status: t.status, order: i })) },
-            { withCredentials: true }
-          );
+          await api.put('/api/tasks/reorder', { taskListId: selectedListId, tasks: newTasks.map((t, i) => ({ id: t.id, status: t.status, order: i })) });
         } catch (err) {
           fetchTasks();
         }
@@ -925,10 +903,10 @@ function TodoPage() {
   const handleSaveList = async (listData) => {
     try {
       if (listData.id) {
-        await axios.put(`${import.meta.env.VITE_API_URL}/api/task-lists/${listData.id}`, listData, { withCredentials: true });
+        await api.put(`/api/task-lists/${listData.id}`, listData);
         showSuccess('List updated');
       } else {
-        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/task-lists`, listData, { withCredentials: true });
+        const res = await api.post('/api/task-lists', listData);
         // Add new list and select it
         const newList = res.data;
         setTaskLists(prev => [newList, ...prev]);
@@ -945,7 +923,7 @@ function TodoPage() {
   const handleDeleteList = async (listId) => {
     if (!confirm('Delete this list?')) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/task-lists/${listId}`, { withCredentials: true });
+      await api.delete(`/api/task-lists/${listId}`);
       showSuccess('List deleted');
       setTaskLists(prev => prev.filter(l => l.id !== listId));
       if (selectedListId === listId) setSelectedListId(taskLists[0]?.id || null);

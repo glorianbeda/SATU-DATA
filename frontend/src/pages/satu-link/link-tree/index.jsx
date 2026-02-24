@@ -107,7 +107,7 @@ const SortableItem = ({ item, onEdit, onDelete }) => {
           width: 44,
           height: 44,
           borderRadius: '12px',
-          background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+          background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
           color: 'white',
           flexShrink: 0,
         }}
@@ -332,7 +332,7 @@ const LinkTreePage = () => {
               p: 3, 
               borderRadius: 3,
               boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
               color: 'white',
               height: '100%',
               display: 'flex',
@@ -479,11 +479,16 @@ const LinkTreePage = () => {
                   error: ''
                 })}
                 sx={{
-                  background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+                  background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
                   boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
                   borderRadius: '12px',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+                    background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
+                  },
+                  '&.Mui-disabled': {
+                    background: '#e0e0e0',
+                    color: '#9e9e9e',
+                    boxShadow: 'none',
                   },
                 }}
               >
@@ -591,11 +596,11 @@ const LinkTreePage = () => {
             disabled={settingsDialog.loading}
             startIcon={settingsDialog.loading ? null : <SaveIcon />}
             sx={{
-              background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
               borderRadius: 2,
               boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+                background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
               },
               '&.Mui-disabled': {
                 background: '#e0e0e0',
@@ -707,11 +712,11 @@ const LinkTreePage = () => {
             variant="contained" 
             disabled={!itemDialog.item?.title || !itemDialog.item?.url}
             sx={{
-              background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
               borderRadius: 2,
               boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+                background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
               },
               '&.Mui-disabled': {
                 background: '#e0e0e0',

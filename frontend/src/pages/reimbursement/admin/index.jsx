@@ -226,7 +226,7 @@ const ReimbursementAdmin = () => {
         <Grid item xs={6} sm={3}>
           <Card sx={{ 
             borderRadius: 2,
-            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+            background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
             color: 'white',
             boxShadow: '0 4px 14px rgba(59, 130, 246, 0.3)',
             transition: 'transform 0.2s',

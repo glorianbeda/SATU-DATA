@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import { profileApi } from '../constants/api';
 import { removeBackground } from '@imgly/background-removal';
 import SignatureCanvas from 'react-signature-canvas';
 import {
@@ -39,12 +39,10 @@ const ProfileEditForm = () => {
   React.useEffect(() => {
     const fetchProfile = async () => {
       try {
+        const response = await profileApi.getProfile();
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-        const response = await axios.get(`${apiUrl}/api/profile`, {
-          withCredentials: true
-        });
 
-        const { user } = response.data;
+        const { user } = response;
         if (user) {
           setName(user.name || '');
           if (user.profilePicture) {
@@ -155,14 +153,7 @@ const ProfileEditForm = () => {
     if (finalSignature) formData.append('sign', finalSignature);
 
     try {
-      // Assuming API URL is from env or relative if proxied
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      await axios.put(`${apiUrl}/api/profile`, formData, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      await profileApi.updateProfile(formData);
 
       setMessage({ type: 'success', text: 'Profile updated successfully' });
     } catch (error) {

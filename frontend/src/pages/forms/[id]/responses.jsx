@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, CircularProgress } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ResponseTable from '~/features/dynamic-forms/components/ResponseTable';
 
@@ -16,8 +16,8 @@ const FormResponsesPage = () => {
     const fetchData = async () => {
       try {
         const [formRes, responsesRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/api/forms/${id}`, { withCredentials: true }),
-          axios.get(`${import.meta.env.VITE_API_URL}/api/forms/${id}/responses`, { withCredentials: true })
+          api.get(`/api/forms/${id}`),
+          api.get(`/api/forms/${id}/responses`)
         ]);
         setForm(formRes.data);
         setResponses(responsesRes.data);

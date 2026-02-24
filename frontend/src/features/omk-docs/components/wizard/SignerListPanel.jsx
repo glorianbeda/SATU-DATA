@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Avatar, CircularProgress, Paper } from '@mui/material';
+import React from 'react';
+import { Box, Typography, Avatar, Paper } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import axios from 'axios';
 
 const SignerListPanel = ({ users = [], selectedSigner, onSignerSelect }) => {
 

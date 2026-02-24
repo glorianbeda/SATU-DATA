@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Alert, CircularProgress } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import api from '~/utils/api';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -35,8 +35,8 @@ const ValidateDocument = () => {
     formData.append('document', file);
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/documents/validate-upload`,
+      const response = await api.post(
+        '/api/documents/validate-upload',
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' }

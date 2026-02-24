@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, Typography, Paper, TextField, FormControlLabel, Switch } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 import { useAlert } from '~/context/AlertContext';
 import FormBuilder from '~/features/dynamic-forms/components/FormBuilder';
@@ -41,9 +41,7 @@ const CreateFormPage = () => {
         settings,
       };
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/forms`, payload, {
-        withCredentials: true
-      });
+      await api.post('/api/forms', payload);
 
       showSuccess(t('forms.form_created'));
       navigate('/forms');

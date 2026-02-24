@@ -1,21 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
   Button,
   Card,
   CardContent,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   CircularProgress,
   Alert,
 } from '@mui/material';
 import {
   Print as PrintIcon,
-  Close as CloseIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -28,35 +22,26 @@ const PrintLabel = ({ open, onClose, assetId }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [asset, setAsset] = useState(null);
-  const [qrCode, setQrCode] = useState('');
   const [error, setError] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const printRef = useRef(null);
 
   useEffect(() => {
     if (open && assetId) {
       fetchAsset();
     }
-  }, [open, assetId]);
+  }, [open, assetId, fetchAsset]);
 
-  const fetchAsset = async () => {
+  const fetchAsset = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get(INVENTORY_API.GET_ASSET(assetId));
       setAsset(response.data.asset);
-      
-      // Generate QR code
-      const qrResponse = await api.post(INVENTORY_API.GENERATE_BARCODE, {
-        assetCode: response.data.asset.assetCode,
-      });
-      setQrCode(qrResponse.data.qrCode);
     } catch (err) {
       console.error('Error fetching asset:', err);
       setError(t('common.error'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [assetId, t]);
 
   const handlePrint = async () => {
     try {
@@ -64,7 +49,7 @@ const PrintLabel = ({ open, onClose, assetId }) => {
       
       // Use native fetch for binary data to avoid Axios JSON parsing issues
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3002'}/api/inventory/labels/generate`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/inventory/labels/generate`,
         {
           method: 'POST',
           headers: {
@@ -105,9 +90,7 @@ const PrintLabel = ({ open, onClose, assetId }) => {
 
   const handleClose = () => {
     setAsset(null);
-    setQrCode(''); // Keeping this state for now as it might be used elsewhere or removed if unused
     setError('');
-    setQuantity(1);
     onClose();
   };
 
@@ -130,11 +113,17 @@ const PrintLabel = ({ open, onClose, assetId }) => {
             disabled={loading || !asset}
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
             sx={{
-              background: 'linear-gradient(to right, #3b82f6, #2563eb)',
-              boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.5)',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+              color: 'white',
               '&:hover': {
-                background: 'linear-gradient(to right, #2563eb, #1d4ed8)',
-              }
+                background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
+              },
+              '&.Mui-disabled': {
+                background: '#e0e0e0',
+                color: '#9e9e9e',
+                boxShadow: 'none',
+              },
             }}
           >
             {loading ? t('common.processing') : `${t('common.download')} PDF`}

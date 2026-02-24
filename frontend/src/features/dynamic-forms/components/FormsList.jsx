@@ -7,7 +7,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import { useTranslation } from 'react-i18next';
 // Assuming useAlert is available in context (based on previous file content)
 // If not found, I might need to adjust, but previous file had it.
@@ -34,7 +34,7 @@ const FormsList = () => {
 
   const checkEnv = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/config`);
+      const response = await api.get('/api/config');
       setIsDev(response.data.isDev);
     } catch (error) {
        // Silent fail, default false
@@ -44,9 +44,7 @@ const FormsList = () => {
 
   const fetchForms = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/forms`, {
-        withCredentials: true
-      });
+      const response = await api.get('/api/forms');
       setForms(response.data);
     } catch (error) {
       console.error('Error fetching forms:', error);
@@ -69,9 +67,7 @@ const FormsList = () => {
   const handleDelete = async (id) => {
     if (!window.confirm(t('forms.delete_confirm'))) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/forms/${id}`, {
-        withCredentials: true
-      });
+      await api.delete(`/api/forms/${id}`);
       showSuccess('Form deleted');
       fetchForms();
     } catch (error) {

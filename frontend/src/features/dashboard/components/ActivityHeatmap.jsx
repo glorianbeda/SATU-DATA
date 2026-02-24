@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
 import { Tooltip } from 'react-tooltip';
-import axios from 'axios';
+import { dashboardApi } from '../constants/api';
 
 const ActivityHeatmap = () => {
     const [loginData, setLoginData] = useState([]);
@@ -11,10 +11,8 @@ const ActivityHeatmap = () => {
     useEffect(() => {
         const fetchLoginActivity = async () => {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/login-activity`, {
-                    withCredentials: true
-                });
-                setLoginData(response.data);
+                const response = await dashboardApi.getLoginActivity();
+                setLoginData(response);
             } catch (error) {
                 console.error('Error fetching login activity:', error);
                 setLoginData(generateDummyData());

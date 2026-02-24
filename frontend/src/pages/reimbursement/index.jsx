@@ -169,10 +169,16 @@ const ReimbursementDashboard = () => {
           startIcon={<AddIcon />}
           onClick={() => setOpenModal(true)}
           sx={{
-            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-            boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.39)',
+            background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+            boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+            color: 'white',
             '&:hover': {
-              background: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+              background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%)',
+            },
+            '&.Mui-disabled': {
+              background: '#e0e0e0',
+              color: '#9e9e9e',
+              boxShadow: 'none',
             },
           }}
         >
@@ -201,7 +207,7 @@ const ReimbursementDashboard = () => {
                   background: card.key === 'pending' 
                     ? 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)'
                     : card.key === 'approved'
-                    ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                    ? 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)'
                     : card.key === 'completed'
                     ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
                     : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',

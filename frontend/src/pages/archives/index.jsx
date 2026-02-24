@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '~/utils/api';
 import {
   Box, Typography, Paper, Button, IconButton, TextField, Dialog,
   DialogTitle, DialogContent, DialogActions, FormControl, InputLabel,
@@ -91,7 +91,7 @@ export default function ArchivesPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/api/archives`, {
+      const res = await api.get('/api/archives', {
         params: { 
           category: categoryFilter || undefined,
           search: searchTerm || undefined,
@@ -161,8 +161,7 @@ export default function ArchivesPage() {
       setUploading(true);
       setUploadProgress(0);
 
-      await axios.post(`${API_URL}/api/archives`, formData, {
-        withCredentials: true,
+      await api.post('/api/archives', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -197,8 +196,7 @@ export default function ArchivesPage() {
   // Download file
   const handleDownload = async (archive) => {
     try {
-      const response = await axios.get(`${API_URL}/api/archives/${archive.id}/download`, {
-        withCredentials: true,
+      const response = await api.get(`/api/archives/${archive.id}/download`, {
         responseType: 'blob',
       });
       
@@ -226,7 +224,7 @@ export default function ArchivesPage() {
 
     if (!isConfirmed) return;
     try {
-      await axios.delete(`${API_URL}/api/archives/${archiveId}`, { withCredentials: true });
+      await api.delete(`/api/archives/${archiveId}`);
       showSuccess('Arsip berhasil dihapus');
       fetchData();
     } catch (error) {
@@ -237,7 +235,7 @@ export default function ArchivesPage() {
   // Share file
   const handleShare = async (archive) => {
     try {
-      const response = await axios.post(`${API_URL}/api/archives/${archive.id}/share`, {
+      const response = await api.post(`/api/archives/${archive.id}/share`, {
         permission: 'VIEW',
       }, { withCredentials: true });
       

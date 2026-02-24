@@ -1,3 +1,11 @@
+/**
+ * Inventory API endpoints
+ * 
+ * Provides methods for inventory management (assets, loans, categories)
+ */
+import { crud, createResourceApi } from '~/utils/crud';
+
+// Keep backward compatibility with string constants
 export const INVENTORY_API = {
   // Categories
   GET_CATEGORIES: "/api/inventory/categories",
@@ -34,3 +42,32 @@ export const INVENTORY_API = {
   GET_USER_HISTORY: (id) => `/api/inventory/history/user/${id}`,
   GET_HISTORY_USER: "/api/inventory/history/user",
 };
+
+// Resource-based APIs for cleaner usage
+export const categoriesApi = createResourceApi('/api/inventory/categories');
+export const assetsApi = createResourceApi('/api/inventory/assets');
+export const loansApi = createResourceApi('/api/inventory/loans');
+export const historyApi = createResourceApi('/api/inventory/history');
+
+/**
+ * Custom Inventory API methods
+ */
+export const inventoryApi = {
+  // Categories
+  categories: categoriesApi,
+
+  // Assets
+  assets: assetsApi,
+
+  // Loans
+  loans: loansApi,
+
+  // History
+  history: historyApi,
+
+  // Custom endpoints
+  generateLabels: (data) => crud.post('/api/inventory/labels/generate', data),
+  uploadAssetImage: (formData) => crud.upload('/api/inventory/assets/upload-image', formData),
+};
+
+export default inventoryApi;
